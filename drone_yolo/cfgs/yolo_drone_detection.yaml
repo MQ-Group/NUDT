@@ -1,0 +1,6 @@
+path: ./input/data/YOLODroneDetection/
+train: images/train
+val: images/val
+test: null
+names:
+  0: drone
