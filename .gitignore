@@ -22,8 +22,11 @@ venv/
 runs/
 
 # 明确忽略数据与权重目录（即使上面的扩展名规则已覆盖）
-vehicle/input/datasets/
-vehicle/input/weights/
+vehicle_yolo/input/
+vehicle_yolo/output/
+
+drone_yolo/input/
+drone_yolo/output/
 
 # 其他常见大文件扩展
 *.tar

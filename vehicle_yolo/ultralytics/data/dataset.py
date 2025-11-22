@@ -796,6 +796,7 @@ class ClassificationDataset:
             else classify_transforms(size=args.imgsz)
         )
         
+        ##########################defend################################################
         self.defend_en = True if args.attack_or_defend == 'defend' else False
         self.defend_method = args.defend_method
         

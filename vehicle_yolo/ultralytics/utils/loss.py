@@ -199,8 +199,8 @@ class v8DetectionLoss:
     def __init__(self, model, tal_topk: int = 10):  # model must be de-paralleled
         """Initialize v8DetectionLoss with model parameters and task-aligned assignment settings."""
         device = next(model.parameters()).device  # get model device
-        print(model)
-        print('-'*100)
+        # print(model)
+        # print('-'*100)
         h = model.args  # hyperparameters
 
         m = model.model[-1]  # Detect() module

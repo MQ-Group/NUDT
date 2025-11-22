@@ -4,6 +4,7 @@ os.environ['YOLO_VERBOSE'] = 'false'
 cfg_dir = "./cfgs"
 YOLO_CONFIG_DIR = str(Path(cfg_dir).resolve())
 # print(YOLO_CONFIG_DIR)
+# print('-'*100)
 os.environ['YOLO_CONFIG_DIR'] = YOLO_CONFIG_DIR
 
 import yaml
