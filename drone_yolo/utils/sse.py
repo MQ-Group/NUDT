@@ -159,21 +159,23 @@ def sse_output_path_validated(args):
             
         
 
-def sse_adv_samples_gen_validated(adv_image_name):
+def sse_adv_samples_gen_validated(adv_image_name, progress):
         event = "adv_samples_gen_validated"
         data = {
             "status": "success",
             "message": "adversarial sample is generated.",
+            "progress": progress,
             "file_name": adv_image_name
         }
         sse_print(event, data)
 
 
-def sse_clean_samples_gen_validated(clean_image_name):
+def sse_clean_samples_gen_validated(clean_image_name, progress):
         event = "clean_samples_gen_validated"
         data = {
             "status": "success",
             "message": "clean sample is generated.",
+            "progress": progress,
             "file_name": clean_image_name
         }
         sse_print(event, data)
@@ -246,6 +248,16 @@ def sse_model_loaded(model_name, weight_path):
         "message": "Model loaded successfully.",
         "model_name": model_name,
         "weight_path": weight_path
+    }
+    sse_print(event, data)
+
+
+
+def sse_log(progress, log):
+    event = "log"
+    data = {
+        "progress": progress,
+        "log": log
     }
     sse_print(event, data)
 

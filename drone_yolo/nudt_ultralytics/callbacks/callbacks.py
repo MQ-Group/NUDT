@@ -26,7 +26,7 @@ def on_pretrain_routine_end(trainer):
         data = {
             "status": "success",
             "message": "Model loaded successfully.",
-            "model_name": trainer.args.model,
+            "model_name": os.path.basename(trainer.args.model).split('.')[0],
             "model_path": trainer.args.pretrained
         }
         sse_print(event, data)
@@ -89,10 +89,16 @@ def on_params_update(trainer):
 
 def teardown(trainer):
     """Called during the teardown of the training process."""
-    event = "task_completed"
+    # event = "task_completed"
+    # data = {
+    #     "status": "success",
+    #     "message": "Task completed successfully.",
+    #     "summary": trainer.metrics
+    # }
+    # sse_print(event, data)
+    
+    event = "final_result"
     data = {
-        "status": "success",
-        "message": "Task completed successfully.",
         "summary": trainer.metrics
     }
     sse_print(event, data)
@@ -103,13 +109,23 @@ def teardown(trainer):
 
 def on_val_start(validator):
     """Called when the validation starts."""
-    event = "task_initialized"
-    data = {
-        "status": "success",
-        "message": "Task initialized successfully.",
-        "parameters": dict(validator.args)
-    }
-    sse_print(event, data)
+    if not validator.training:
+        event = "task_initialized"
+        data = {
+            "status": "success",
+            "message": "Task initialized successfully.",
+            "parameters": dict(validator.args)
+        }
+        sse_print(event, data)
+        
+        event = "model_loaded"
+        data = {
+            "status": "success",
+            "message": "Model loaded successfully.",
+            "model_name": os.path.basename(validator.args.model).split('.')[0],
+            "model_path": validator.args.pretrained
+        }
+        sse_print(event, data)
 
 
 def on_val_batch_start(validator):
@@ -119,18 +135,32 @@ def on_val_batch_start(validator):
 
 def on_val_batch_end(validator):
     """Called at the end of each validation batch."""
-    pass
+    if not validator.training:
+        event = "log"
+        data = {
+            "progress": validator.batch_i
+        }
+        sse_print(event, data)
 
 
 def on_val_end(validator):
     """Called when the validation ends."""
-    event = "task_completed"
-    data = {
-        "status": "success",
-        "message": "Task completed successfully.",
-        "summary": validator.metrics.summary()
-    }
-    sse_print(event, data)
+    # if not validator.training:
+    #     event = "task_completed"
+    #     data = {
+    #         "status": "success",
+    #         "message": "Task completed successfully.",
+    #         "summary": validator.metrics.summary()
+    #     }
+    #     sse_print(event, data)
+    
+    if not validator.training:
+        event = "final_result"
+        data = {
+            "status": "success",
+            "summary": validator.metrics.summary()
+        }
+        sse_print(event, data)
 
 
 # Predictor callbacks --------------------------------------------------------------------------------------------------

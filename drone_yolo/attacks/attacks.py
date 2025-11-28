@@ -155,7 +155,7 @@ class attacks:
                 self.detect_save_adv_image(adv_image=adv_images[0], ori_image_file=batch["im_file"][0])
             elif self.cfg.task == "classify":
                 self.classify_save_adv_image(adv_image=adv_images[0], ori_image_file=batch["im_file"][0])
-            if batch_i == self.args.gen_adv_sample_num - 1:
+            if batch_i == self.args.selected_samples - 1:
                 break
             
     def gen_loss_fn(self, name):

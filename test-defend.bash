@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Image to run (replace with your image/tag or SHA as needed)
-IMAGE="nudt_yolo:latest"
+IMAGE="vehicle_yolo:latest"
 
 # GPU device to use (format matches --gpus "device=X")
 GPU_DEVICE="0"

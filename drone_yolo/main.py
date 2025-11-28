@@ -10,8 +10,8 @@ from nudt_ultralytics.main import main as yolo
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_path', type=str, default='./input', help='input path')
-    parser.add_argument('--output_path', type=str, default='./output', help='output path')
+    parser.add_argument('--input_path', type=str, default='../input', help='input path')
+    parser.add_argument('--output_path', type=str, default='../output', help='output path')
     
     parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train'], help='process name')
     parser.add_argument('--model', type=str, default='drone_yolo', choices=['drone_yolo'], help='model name')
@@ -24,12 +24,12 @@ def parse_args():
     parser.add_argument('--cfg_path', type=str, default='./cfgs', help='cfg path')
     
     parser.add_argument('--epochs', type=int, default=100, help='epochs')
-    parser.add_argument('--batch', type=int, default=8, help='batch size')
+    parser.add_argument('--batch', type=int, default=1, help='batch size')
     # parser.add_argument('--device', type=int, default=0, help='which gpu for cuda')
     parser.add_argument('--device', type=str, default='cpu', help='which gpu for cuda')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--gen_adv_sample_num', type=int, default=10, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--selected_samples', type=int, default=0, help='the number of generated adversarial sample for attack method')
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method')
     parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method')

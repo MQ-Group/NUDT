@@ -286,7 +286,7 @@ class TQDM:
             self.file.flush()
         except Exception:
             pass
-
+    
     def update(self, n: int = 1) -> None:
         """Update progress by n steps."""
         if not self.disable and not self.closed:

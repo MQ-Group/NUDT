@@ -61,7 +61,7 @@ class attacks:
             self.dataloader = build_dataloader(self.dataset, self.cfg.batch, self.cfg.workers, rank=-1)
         
     
-    def classify_save_adv_image(self, adv_image, ori_image_file):
+    def classify_save_adv_image(self, adv_image, ori_image_file, progress):
         # print(ori_image_file)
         ori_image_name = ori_image_file.split('/')[-1]
         ori_cls_flod = ori_image_file.split('/')[-2]
@@ -74,9 +74,9 @@ class attacks:
         to_pil = transforms.ToPILImage()
         pil_image = to_pil(adv_image)
         pil_image.save(adv_image_file)
-        sse_adv_samples_gen_validated(adv_image_file)
+        sse_adv_samples_gen_validated(adv_image_file, progress)
         
-    def detect_save_adv_image(self, adv_image, ori_image_file):
+    def detect_save_adv_image(self, adv_image, ori_image_file, progress):
         # print(ori_image_file)
         ori_image_name = ori_image_file.split('/')[-1]
         ori_image_flod = ori_image_file.split('/')[-3]
@@ -89,7 +89,7 @@ class attacks:
         to_pil = transforms.ToPILImage()
         pil_image = to_pil(adv_image)
         pil_image.save(adv_image_file)
-        sse_adv_samples_gen_validated(adv_image_file)
+        sse_adv_samples_gen_validated(adv_image_file, progress)
         
         ori_label_flod = 'labels'
         ori_label_file = ori_image_file.replace(ori_image_flod, ori_label_flod).split('.')[0] + '.txt'
@@ -152,10 +152,10 @@ class attacks:
                 raise ValueError('Invalid attach method!')
             
             if self.cfg.task == "detect":
-                self.detect_save_adv_image(adv_image=adv_images[0], ori_image_file=batch["im_file"][0])
+                self.detect_save_adv_image(adv_image=adv_images[0], ori_image_file=batch["im_file"][0], progress=batch_i)
             elif self.cfg.task == "classify":
-                self.classify_save_adv_image(adv_image=adv_images[0], ori_image_file=batch["im_file"][0])
-            if batch_i == self.args.gen_adv_sample_num - 1:
+                self.classify_save_adv_image(adv_image=adv_images[0], ori_image_file=batch["im_file"][0], progress=batch_i)
+            if batch_i == self.args.selected_samples - 1:
                 break
             
     def gen_loss_fn(self, name):

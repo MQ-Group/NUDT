@@ -454,6 +454,23 @@ class BaseTrainer:
                             batch["img"].shape[-1],  # imgsz, i.e 640
                         )
                     )
+                    ############################################################
+                    from utils.sse import sse_log
+                    import json
+                    log = {
+                        "epoch": f"{epoch + 1}/{self.epochs}",
+                        "batch size": batch["img"].shape[0],
+                        "image size": batch["img"].shape[-1],
+                        "GPU memory util": f"{self._get_memory():.3g}G",
+                        "loss": self.loss.item(),
+                    }
+                    sse_log(progress=epoch, log=log)
+                    # print(self.args)
+                    with open(f'{self.args.save_dir}/log.txt', 'a', encoding='utf-8') as f:
+                        json_str = json.dumps(log, ensure_ascii=False, default=lambda obj: obj.item() if isinstance(obj, np.generic) else obj)
+                        f.write(json_str)
+                        f.write('\n')
+                    ############################################################
                     self.run_callbacks("on_batch_end")
                     if self.args.plots and ni in self.plot_idx:
                         self.plot_training_samples(batch, ni)

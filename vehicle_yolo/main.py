@@ -10,27 +10,27 @@ from nudt_ultralytics.main import main as yolo
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_path', type=str, default='./input', help='input path')
-    parser.add_argument('--output_path', type=str, default='./output', help='output path')
+    parser.add_argument('--input_path', type=str, default='../input', help='input path')
+    parser.add_argument('--output_path', type=str, default='../output', help='output path')
     
     parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train'], help='process name')
-    parser.add_argument('--model', type=str, default='yolov8', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
-    parser.add_argument('--data', type=str, default='coco8', choices=['coco8', 'imagenet10'], help='data name')
+    parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
+    parser.add_argument('--data', type=str, default='coco8', choices=['coco8', 'kitti10', 'imagenet10'], help='data name')
     parser.add_argument('--task', type=str, default='detect', choices=['detect', 'classify'], help='task name. detect for coco8, classify for imagenet10')
-    parser.add_argument('--class_number', type=int, default=80, choices=[80, 1000], help='number of class. 80 for coco8, 1000 for imagenet10')
+    parser.add_argument('--class_number', type=int, default=80, choices=[80, 8, 1000], help='number of class. 80 for coco8, 8 for kitti10, 1000 for imagenet10')
     
-    parser.add_argument('--attack_method', type=str, default='pgd', choices=['cw', 'deepfool', 'bim', 'fgsm', 'pgd'], help='attack method')
-    parser.add_argument('--defend_method', type=str, default='fgsm_denoise', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
+    parser.add_argument('--attack_method', type=str, default='cw', choices=['cw', 'deepfool', 'bim', 'fgsm', 'pgd'], help='attack method')
+    parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
     
     parser.add_argument('--cfg_path', type=str, default='./cfgs', help='cfg path')
     
     parser.add_argument('--epochs', type=int, default=100, help='epochs')
-    parser.add_argument('--batch', type=int, default=8, help='batch size')
+    parser.add_argument('--batch', type=int, default=1, help='batch size')
     parser.add_argument('--device', type=int, default=0, help='which gpu for cuda')
     # parser.add_argument('--device', type=str, default='cpu', help='which gpu for cuda')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--gen_adv_sample_num', type=int, default=10, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--selected_samples', type=int, default=0, help='the number of generated adversarial sample for attack method')
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method')
     parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method')
