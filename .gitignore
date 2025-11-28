@@ -1,7 +1,7 @@
 # 大文件 / 二进制
 *.zip
 *.rar
-*.pt
+# *.pt
 *.ckpt
 *.bin
 
