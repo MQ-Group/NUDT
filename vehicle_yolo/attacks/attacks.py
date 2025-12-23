@@ -318,7 +318,7 @@ class attacks:
         Flatten = nn.Flatten()
 
         # optimizer = optim.Adam([w], lr=lr)
-        optimizer = get_optimizer(optimization_method, [w], lr)
+        optimizer = self.get_optimizer(optimization_method, [w], lr)
 
         for step in range(steps):
             # Get adversarial images

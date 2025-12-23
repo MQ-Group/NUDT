@@ -1,6 +1,6 @@
 task: detect
 mode: train
-model: ./cfgs/yolov5.yaml
+model: ./cfgs/yolov10.yaml
 data: ./cfgs/coco8.yaml
 imgsz: 640
 epochs: 100
@@ -10,7 +10,7 @@ workers: 8
 pretrained: null
 resume: false
 optimizer: auto
-project: yolov5
+project: yolov10
 name: train
 save_dir: ../output
 save: true

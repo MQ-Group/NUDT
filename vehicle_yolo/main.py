@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('--output_path', type=str, default='../output', help='output path')
     
     parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train'], help='process name')
-    parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
+    parser.add_argument('--model', type=str, default='yolov10', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
     parser.add_argument('--data', type=str, default='coco8', choices=['coco8', 'kitti10', 'imagenet10'], help='data name')
     parser.add_argument('--task', type=str, default='detect', choices=['detect', 'classify'], help='task name. detect for coco8, classify for imagenet10')
     parser.add_argument('--class_number', type=int, default=80, choices=[80, 8, 1000], help='number of class. 80 for coco8, 8 for kitti10, 1000 for imagenet10')
@@ -68,8 +68,10 @@ def yolo_cfg(args):
     
     data_yaml = f'./nudt_ultralytics/cfgs/datasets/{args.data}.yaml'
     data_cfg = load_yaml(data_yaml)
-    # data_cfg['path'] = f'{args.input_path}/data/{args.data}' # 数据集名称与数据集文件夹名称绑定成一样
-    data_cfg['path'] = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0] # input_path/data目录下有且只有一个数据集文件夹
+    dataset_path = os.path.join(f'{args.input_path}/data', args.data)
+    if not os.path.exists(dataset_path):
+        raise ValueError(f"Dataset path not found for data='{args.data}': {dataset_path}")
+    data_cfg['path'] = dataset_path
     data_yaml = f'{args.cfg_path}/{args.data}.yaml'
     save_yaml(data_cfg, data_yaml)
     
@@ -88,22 +90,22 @@ def yolo_cfg(args):
     if args.process == 'adv':
         cfg.mode = 'predict'
         cfg.batch = 1
-        # cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
+        cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
+        # cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
         cfg.device = args.device
     elif args.process == 'attack':
         cfg.mode = 'validate'
         cfg.batch = 1
-        # cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
+        cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
+        # cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
         cfg.device = args.device
         cfg.attack_or_defend = 'attack'
         cfg.attack_method = args.attack_method
     elif args.process == 'defend':
         cfg.mode = 'predict'
         # cfg.batch = 1
-        # cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
+        cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
+        # cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
         cfg.attack_or_defend = 'defend'
         cfg.defend_method = args.defend_method
     elif args.process == 'train':

@@ -66,6 +66,9 @@ def main(args):
     
     if args.process == 'train':
         model = YOLO(model=cfg.model, task=cfg.task, verbose=cfg.verbose) # task: 'detect', 'segment', 'classify', 'pose', 'obb'. verbose: Display model info on load.
+        # print(model)
+        # param_num = sum(p.numel() for p in model.parameters())
+        # print(f'Number of Parameters: {param_num}')
         for (event, func) in callbacks_dict.items():
             model.add_callback(event, func)
         results = model.train(cfg=args.cfg_yaml)
