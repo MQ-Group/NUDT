@@ -163,9 +163,9 @@ def sse_adv_samples_gen_validated(adv_image_name, progress, selected_samples):
         event = "adversarial_samples_generation_validated"
         data = {
             "status": "success",
-            "message": "adversarial sample is generated.",
+            "message": "生成对抗样本...",
             "progress": int(progress/selected_samples*100),
-            "log": f"[{int(progress/selected_samples*100)}%] generating {progress}th adversarial sample, out of a total of {selected_samples}",
+            "log": f"[{int(progress/selected_samples*100)}%] 正在生成第{progress}张对抗样本, 总共需要生成{selected_samples}张.",
             "file_name": adv_image_name
         }
         sse_print(event, data)

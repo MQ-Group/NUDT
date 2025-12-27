@@ -102,8 +102,9 @@ def main(args):
         from utils.sse import sse_print
         event = "final_result"
         data = {
-            "message": "geneatre adversarial sample done.",
-            "log": f"adversarial sample dataset is saved in {args.output_path}/adv_{ori_dataset_name}, including {args.selected_samples} adversarial sample"
+            "message": "对抗样本生成完毕.",
+            "progress": "100",
+            "log": f"[100%] 对抗样本保存在{args.output_path}/adv_{ori_dataset_name}, 包含{args.selected_samples}个对抗样本."
         }
         sse_print(event, data)
     elif args.process == 'sample':

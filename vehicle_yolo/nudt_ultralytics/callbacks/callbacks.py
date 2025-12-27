@@ -136,13 +136,20 @@ def on_val_batch_start(validator):
 def on_val_batch_end(validator):
     """Called at the end of each validation batch."""
     if not validator.training:
-        event = "log"
-        data = {
-            "progress": int(validator.batch_i/len(validator.dataloader)),
-            "original_image": validator.original_image[0],
-            "plot_predictions_image": f"{validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
-        }
-        sse_print(event, data)
+        if validator.args.attack_or_defend == "attack":
+            event = "attack"
+            data = {
+                "progress": f"{int(validator.batch_i/len(validator.dataloader))}",
+                "log": f"[{int(validator.batch_i/len(validator.dataloader))}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
+            }
+            sse_print(event, data)
+        elif validator.args.attack_or_defend == "defend":
+            event = "defend"
+            data = {
+                "progress": f"{int(validator.batch_i/len(validator.dataloader))}",
+                "log": f"[{int(validator.batch_i/len(validator.dataloader))}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
+            }
+            sse_print(event, data)
 
 
 def on_val_end(validator):
@@ -159,8 +166,8 @@ def on_val_end(validator):
     if not validator.training:
         event = "final_result"
         data = {
-            "status": "success",
-            "summary": validator.metrics.summary()
+            "progress": "100",
+            "log": f"[100%] summary: {validator.metrics.summary()}"
         }
         sse_print(event, data)
 
