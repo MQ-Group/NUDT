@@ -1,7 +1,7 @@
 import yaml
 
 def load_yaml(load_path):
-    with open(load_path, 'r') as f:
+    with open(load_path, 'r', encoding='utf-8') as f:
         config = yaml.safe_load(f)
     return config
 

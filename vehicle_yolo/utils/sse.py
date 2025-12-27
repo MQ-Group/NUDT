@@ -93,8 +93,7 @@ def sse_input_path_validated(args):
                     data = {
                         "status": "success",
                         "message": "Input data file is valid and complete.",
-                        # "file_name": glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
-                        "file_name": os.path.join(f'{args.input_path}/data', args.data)
+                        "file_name": glob.glob(os.path.join(f'{args.input_path}/data', '*'))[0]
                     }
                     sse_print(event, data)
                 else:
@@ -113,7 +112,7 @@ def sse_input_path_validated(args):
                     data = {
                         "status": "success",
                         "message": "Input model file is valid and complete.",
-                        "file_name": f'{args.input_path}/model/{args.model}.pt'
+                        "file_name": glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0]
                     }
                     sse_print(event, data)
                 else:
@@ -161,7 +160,7 @@ def sse_output_path_validated(args):
         
 
 def sse_adv_samples_gen_validated(adv_image_name, progress):
-        event = "adv_samples_gen_validated"
+        event = "adversarial_samples_generation_validated"
         data = {
             "status": "success",
             "message": "adversarial sample is generated.",
@@ -172,7 +171,7 @@ def sse_adv_samples_gen_validated(adv_image_name, progress):
 
 
 def sse_clean_samples_gen_validated(clean_image_name, progress):
-        event = "clean_samples_gen_validated"
+        event = "clean_samples_generation_validated"
         data = {
             "status": "success",
             "message": "clean sample is generated.",

@@ -94,7 +94,20 @@ def main(args):
         from attacks.attacks import attacks
         att = attacks(args)
         att.run_adv()
-    
+    elif args.process == 'sample':
+        from sample.sample import sample_dataset
+        sampled_data_path = f'{args.output_path}/sampled_' + args.data_name
+        sample_dataset(source_dir=args.data_path, target_dir=sampled_data_path, train_count=args.selected_samples, val_count=args.selected_samples, seed=None)
+        import os
+        os.system(f"cp {args.data_yaml} {sampled_data_path}")
+        from utils.sse import sse_print
+        event = "dataset_sample_validated"
+        data = {
+            "status": "success",
+            "message": f"selected {args.selected_samples} samples from {args.data_path} ",
+            "file_name": sampled_data_path
+        }
+        sse_print(event, data)
 
 def parse_args():
     parser = argparse.ArgumentParser()

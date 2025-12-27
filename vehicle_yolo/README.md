@@ -8,8 +8,8 @@
 * `output_path`（必填）: 指定输出路径，在此路径下保存生成的对抗样本和防御训练的权重。
 * `process`（必填）: 指定进程名称，支持枚举值（第一个为默认值）:`adv`, `attack`, `defend`, `train`。
 * `model`（必填）: 指定模型名称，支持枚举值:`yolov5`, `yolov8`, `yolov10` 。
-* `data`（必填）: 指定数据集，支持枚举值:`coco8`(抽取自完成coco数据集), `kitti10`(抽取自完成kitti数据集)。
-* `class_number`（必填）: 指定目标类别数量，与数据集绑定，对于coco数据集为`80` 对于kitti数据集为`8` 。
+* `data`（必填）: 指定数据集，支持枚举值:`kitti`, `bdd100k`, `ua-detrac`, `dawn`, `special_vehicle`。
+* `class_number`（必填）: 指定目标类别数量，与数据集绑定，对于kitti数据集为`8` 。
 * `attack_method`（选填）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `cw`, `deepfool`, `bim`, `fgsm`, `pgd`。
 * `defend_method`（选填）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`scale`, `compression`, `fgsm_denoise`, `neural_cleanse`, `pgd_purifier`。
 * `epochs`（选填，默认为`100`）：训练迭代次数，若`process`为`train`时有效。

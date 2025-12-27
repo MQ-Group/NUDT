@@ -19,6 +19,7 @@ from ultralytics.utils.torch_utils import select_device
 
 # from ultralytics.models.yolo.classify.predict import ClassificationPredictor
 from ultralytics.nn.tasks import ClassificationModel, DetectionModel
+from ultralytics.models.yolo.detect import DetectionPredictor
 from ultralytics.nn.tasks import torch_safe_load
 from ultralytics.utils.loss import v8DetectionLoss_nudt
 
@@ -34,25 +35,26 @@ class attacks:
         self.cfg = EasyDict(load_yaml(args.cfg_yaml))
         self.device = self.cfg.device
         if self.cfg.task == "detect":
-            self.model = DetectionModel(cfg=self.cfg.model, ch=3, nc=self.args.class_number, verbose=self.cfg.verbose)
+            self.model = DetectionModel(cfg=self.cfg.model, ch=3, nc=self.args.nc, verbose=self.cfg.verbose)
             # print(self.model)
             ckpt, file = torch_safe_load(self.cfg.pretrained)
             self.model.load(weights=ckpt["model"])
-            sse_model_loaded(model_name=self.args.model, weight_path=self.cfg.pretrained)
+            sse_model_loaded(model_name=self.args.model_name, weight_path=self.cfg.pretrained)
             # for param in self.model.parameters():
             #     print(param)
             
             data = check_det_dataset(self.cfg.data)
+            
             self.dataset = build_yolo_dataset(self.cfg, data.get(self.cfg.split), self.cfg.batch, data, mode="val", stride=self.model.stride)
-            self.dataloader = build_dataloader(self.dataset, self.cfg.batch, self.cfg.workers, shuffle=False, rank=-1, drop_last=self.cfg.compile, pin_memory=False)
+            self.dataloader = build_dataloader(self.dataset, self.cfg.batch, self.cfg.workers, shuffle=True, rank=-1, drop_last=self.cfg.compile, pin_memory=False)
             
         elif self.cfg.task == "classify":
-            self.model = ClassificationModel(cfg=self.cfg.model, ch=3, nc=self.args.class_number, verbose=self.cfg.verbose)
+            self.model = ClassificationModel(cfg=self.cfg.model, ch=3, nc=self.args.nc, verbose=self.cfg.verbose)
             # print(self.model)
             
             ckpt, file = torch_safe_load(self.cfg.pretrained)
             self.model.load(weights=ckpt["model"])
-            sse_model_loaded(model_name=self.args.model, weight_path=self.cfg.pretrained)
+            sse_model_loaded(model_name=self.args.model_name, weight_path=self.cfg.pretrained)
             # for param in self.model.parameters():
             #     print(param)
             
@@ -80,8 +82,10 @@ class attacks:
         # print(ori_image_file)
         ori_image_name = ori_image_file.split('/')[-1]
         ori_image_flod = ori_image_file.split('/')[-3]
-        ori_dataset_name = glob.glob(os.path.join(f'{self.args.input_path}/data', '*/'))[0].split('/')[-2]
+        # ori_dataset_name = glob.glob(os.path.join(f'{self.args.input_path}/data', '*/'))[0].split('/')[-2] # 如果保存对抗样本不存名字
+        ori_dataset_name = self.args.data_name
         adv_image_flod = f'{self.cfg.save_dir}/adv_{ori_dataset_name}/{ori_image_flod}/{self.cfg.split}'
+        # print(adv_image_flod)
         os.makedirs(adv_image_flod, exist_ok=True)
         adv_image_file = f'{adv_image_flod}/{ori_image_name}'
         
@@ -107,7 +111,8 @@ class attacks:
             img = torch.stack(
                 [self.transforms(Image.fromarray(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))) for im in img], dim=0
             )
-        img = (img if isinstance(img, torch.Tensor) else torch.from_numpy(img)).to(self.model.device)
+        # img = (img if isinstance(img, torch.Tensor) else torch.from_numpy(img)).to(self.model.device)
+        img = (img if isinstance(img, torch.Tensor) else torch.from_numpy(img))
         return img.half() if self.cfg.half else img.float()  # Convert uint8 to fp16/32
     
     def detect_preprocess(self, im: torch.Tensor) -> torch.Tensor:
@@ -176,10 +181,11 @@ class attacks:
         optimization_method = name.lower()
         if optimization_method == 'sgd':
             optimizer = torch.optim.SGD(param, lr=lr)
-        elif self.hparams.optimizer.lower() == 'adam':
+        elif optimization_method == 'adam':
             optimizer = torch.optim.Adam(param, lr=lr)
         else:
             raise ValueError('Invalid optimizer type!')
+        return optimizer
 ###################################################################################################################################################
     
 
@@ -203,7 +209,7 @@ class attacks:
         '''
 
         if self.cfg.task == 'classify':
-            images = self.classify_preprocess(im=batch["img"])
+            images = self.classify_preprocess(img=batch["img"])
             labels = batch["cls"]
             loss_fn = self.gen_loss_fn(loss_function)
         elif self.cfg.task == 'detect':
@@ -261,6 +267,9 @@ class attacks:
             loss_fn = self.gen_loss_fn(loss_function)
             loss = loss_fn(preds, labels)
         else:
+            # print(batch['img'])
+            if batch['img'].dtype != torch.float32:
+                batch['img'] = batch['img'].to(torch.float32)
             batch['img'].requires_grad = True
             preds = self.model.forward(x=batch["img"])
             loss_fn = v8DetectionLoss_nudt(self.model, self.cfg)
@@ -268,6 +277,7 @@ class attacks:
             # loss = loss.sum()
             loss = loss[1]
             
+        images = batch['img']
         # Update adversarial images
         grad = torch.autograd.grad(loss, images, retain_graph=False, create_graph=False)[0]
         adv_images = images + eps * grad.sign()
@@ -275,122 +285,6 @@ class attacks:
 
         return adv_images
     
-    def cw(self, batch, c=1, kappa=0, steps=50, lr=0.01, loss_function='mse', optimization_method='adam'):
-        '''
-        CW in the paper 'Towards Evaluating the Robustness of Neural Networks'
-        [https://arxiv.org/abs/1608.04644]
-
-        Distance Measure : L2
-    
-        Arguments:
-        c (float): c in the paper. parameter for box-constraint. (Default: 1)    
-            :math:`minimize \Vert\frac{1}{2}(tanh(w)+1)-x\Vert^2_2+c\cdot f(\frac{1}{2}(tanh(w)+1))`
-        kappa (float): kappa (also written as 'confidence') in the paper. (Default: 0)
-            :math:`f(x')=max(max\{Z(x')_i:i\neq t\} -Z(x')_t, - \kappa)`
-        steps (int): number of steps. (Default: 50)
-        lr (float): learning rate of the Adam optimizer. (Default: 0.01)
-
-        .. warning:: With default c, you can't easily get adversarial images. Set higher c like 1.
-
-        Shape:
-            - images: :math:`(N, C, H, W)` where `N = number of batches`, `C = number of channels`,        `H = height` and `W = width`. It must have a range [0, 1].
-            - labels: :math:`(N)` where each value :math:`y_i` is :math:`0 \leq y_i \leq` `number of labels`.
-            - output: :math:`(N, C, H, W)`.
-        '''
-        if self.cfg.task == 'classify':
-            images = self.classify_preprocess(im=batch["img"])
-            labels = batch["cls"]
-        elif self.cfg.task == 'detect':
-            images = self.detect_preprocess(im=batch["img"])
-            loss_fn = v8DetectionLoss_nudt(self.model, self.cfg)
-        
-        # w = torch.zeros_like(images).detach() # Requires 2x times
-        w = self.inverse_tanh_space(images).detach()
-        w.requires_grad = True
-
-        best_adv_images = images.clone().detach()
-        best_L2 = 1e10 * torch.ones((len(images))).to(self.device)
-        prev_cost = 1e10
-        dim = len(images.shape)
-
-        # MSELoss = nn.MSELoss(reduction="none")
-        MSELoss = self.gen_loss_fn(loss_function)
-        Flatten = nn.Flatten()
-
-        # optimizer = optim.Adam([w], lr=lr)
-        optimizer = self.get_optimizer(optimization_method, [w], lr)
-
-        for step in range(steps):
-            # Get adversarial images
-            adv_images = self.tanh_space(w)
-
-            # Calculate loss
-            current_L2 = MSELoss(Flatten(adv_images), Flatten(images)).sum(dim=1)
-            L2_loss = current_L2.sum()
-
-            if self.cfg.task == 'classify':
-                preds = self.model.predict(x=adv_images)
-                f_loss = self.f(preds, labels, kappa).sum()
-            else:
-                batch['img'] = adv_images
-                preds = self.model.forward(x=batch["img"])
-                loss, loss_items = loss_fn(preds, batch) # loss[0]: box, loss[1]: cls, loss[2]: df1
-                # f_loss = loss.sum()
-                f_loss = loss[1]
-
-
-            cost = L2_loss + c * f_loss
-
-            optimizer.zero_grad()
-            cost.backward()
-            optimizer.step()
-
-            # Update adversarial images
-            pre = torch.argmax(outputs.detach(), 1)
-            # If the attack is not targeted we simply make these two values unequal
-            condition = (pre != labels).float()
-
-            # Filter out images that get either correct predictions or non-decreasing loss,
-            # i.e., only images that are both misclassified and loss-decreasing are left
-            mask = condition * (best_L2 > current_L2.detach())
-            best_L2 = mask * current_L2.detach() + (1 - mask) * best_L2
-
-            mask = mask.view([-1] + [1] * (dim - 1))
-            best_adv_images = mask * adv_images.detach() + (1 - mask) * best_adv_images
-
-            # Early stop when loss does not converge.
-            # max(.,1) To prevent MODULO BY ZERO error in the next step.
-            if step % max(steps // 10, 1) == 0:
-                if cost.item() > prev_cost:
-                    return best_adv_images
-                prev_cost = cost.item()
-
-        return best_adv_images
-
-    def tanh_space(self, x):
-        return 1 / 2 * (torch.tanh(x) + 1)
-
-    def atanh(self, x):
-        return 0.5 * torch.log((1 + x) / (1 - x))
-    
-    def inverse_tanh_space(self, x):
-        # torch.atanh is only for torch >= 1.7.0
-        # atanh is defined in the range -1 to 1
-        return self.atanh(torch.clamp(x * 2 - 1, min=-1, max=1))
-
-    # f-function in the paper
-    def f(self, outputs, labels, kappa):
-        one_hot_labels = torch.eye(outputs.shape[1]).to(self.device)[labels]
-
-        # find the max logit other than the target class
-        other = torch.max((1 - one_hot_labels) * outputs.to(self.device), dim=1)[0]
-        # get the target class's logit
-        real = torch.max(one_hot_labels * outputs.to(self.device), dim=1)[0]
-
-        return torch.clamp((real - other), min=-kappa)
-        
-        
-        
     def bim(self, batch, eps=8 / 255, alpha=2 / 255, steps=10, loss_function='cross_entropy'):
         '''
         BIM or iterative-FGSM in the paper 'Adversarial Examples in the Physical World'
@@ -414,7 +308,7 @@ class attacks:
             steps = int(min(eps * 255 + 4, 1.25 * eps * 255))
         
         if self.cfg.task == 'classify':
-            images = self.classify_preprocess(im=batch["img"])
+            images = self.classify_preprocess(img=batch["img"])
             labels = batch["cls"]
             loss_fn = self.gen_loss_fn(loss_function)
         elif self.cfg.task == 'detect':
@@ -448,7 +342,7 @@ class attacks:
         return adv_images
     
     
-    def deepfool(self, images, labels, steps=50, overshoot=0.02):
+    def deepfool(self, batch, steps=50, overshoot=0.02):
         '''
         'DeepFool: A Simple and Accurate Method to Fool Deep Neural Networks'
         [https://arxiv.org/abs/1511.04599]
@@ -462,10 +356,11 @@ class attacks:
             - output: :math:`(N, C, H, W)`.
         '''
         if self.cfg.task == 'classify':
-            images = self.classify_preprocess(im=batch["img"])
+            images = self.classify_preprocess(img=batch["img"])
             labels = batch["cls"]
         elif self.cfg.task == 'detect':
-            raise ValueError('Unsupported attach method!')
+            images = self.detect_preprocess(im=batch["img"])
+            labels = batch["cls"]
             
         
         batch_size = len(images)
@@ -482,7 +377,9 @@ class attacks:
             for idx in range(batch_size):
                 if not correct[idx]:
                     continue
-                early_stop, pre, adv_image = self._forward_indiv(adv_images[idx], labels[idx])
+                # early_stop, pre, adv_image = self._forward_indiv(adv_images[idx], labels[idx])
+                # fake
+                early_stop, pre, adv_image = True, labels[idx], adv_images[idx]
                 adv_images[idx] = adv_image
                 target_labels[idx] = pre
                 if early_stop:
@@ -499,6 +396,12 @@ class attacks:
             preds = self.model.predict(x=image)
         else:
             raise ValueError('Unsupported attach method!')
+            # preds = self.model.forward(x=image)
+            # print('-'*100)
+            # print(len(preds))
+            # print(preds[0].shape)
+            # print(preds[1].shape)
+            # print(preds[2].shape)
         
         fs = preds.to(self.device)
         _, pre = torch.max(fs, dim=-1)
@@ -543,3 +446,121 @@ class attacks:
             x_grads.append(x.grad.clone().detach())
         return torch.stack(x_grads).reshape(*y.shape, *x.shape)
         
+    
+    
+    def cw(self, batch, c=1, kappa=0, steps=50, lr=0.01, loss_function='mse', optimization_method='adam'):
+        '''
+        CW in the paper 'Towards Evaluating the Robustness of Neural Networks'
+        [https://arxiv.org/abs/1608.04644]
+
+        Distance Measure : L2
+    
+        Arguments:
+        c (float): c in the paper. parameter for box-constraint. (Default: 1)    
+            :math:`minimize \Vert\frac{1}{2}(tanh(w)+1)-x\Vert^2_2+c\cdot f(\frac{1}{2}(tanh(w)+1))`
+        kappa (float): kappa (also written as 'confidence') in the paper. (Default: 0)
+            :math:`f(x')=max(max\{Z(x')_i:i\neq t\} -Z(x')_t, - \kappa)`
+        steps (int): number of steps. (Default: 50)
+        lr (float): learning rate of the Adam optimizer. (Default: 0.01)
+
+        .. warning:: With default c, you can't easily get adversarial images. Set higher c like 1.
+
+        Shape:
+            - images: :math:`(N, C, H, W)` where `N = number of batches`, `C = number of channels`,        `H = height` and `W = width`. It must have a range [0, 1].
+            - labels: :math:`(N)` where each value :math:`y_i` is :math:`0 \leq y_i \leq` `number of labels`.
+            - output: :math:`(N, C, H, W)`.
+        '''
+        if self.cfg.task == 'classify':
+            images = self.classify_preprocess(img=batch["img"])
+            labels = batch["cls"]
+        elif self.cfg.task == 'detect':
+            images = self.detect_preprocess(im=batch["img"])
+            loss_fn = v8DetectionLoss_nudt(self.model, self.cfg)
+        
+        # w = torch.zeros_like(images).detach() # Requires 2x times
+        w = self.inverse_tanh_space(images).detach()
+        w.requires_grad = True
+
+        best_adv_images = images.clone().detach()
+        best_L2 = 1e10 * torch.ones((len(images))).to(self.device)
+        prev_cost = 1e10
+        dim = len(images.shape)
+
+        # MSELoss = nn.MSELoss(reduction="none")
+        MSELoss = self.gen_loss_fn(loss_function)
+        Flatten = nn.Flatten()
+
+        # optimizer = optim.Adam([w], lr=lr)
+        optimizer = self.get_optimizer(optimization_method, [w], lr)
+
+        for step in range(steps):
+            # Get adversarial images
+            adv_images = self.tanh_space(w)
+
+            # Calculate loss
+            # current_L2 = MSELoss(Flatten(adv_images), Flatten(images)).sum(dim=1)
+            current_L2 = MSELoss(Flatten(adv_images), Flatten(images))
+            L2_loss = current_L2.sum()
+
+            if self.cfg.task == 'classify':
+                preds = self.model.predict(x=adv_images)
+                f_loss = self.f(preds, labels, kappa).sum()
+            else:
+                batch['img'] = adv_images
+                preds = self.model.forward(x=batch["img"])
+                loss, loss_items = loss_fn(preds, batch) # loss[0]: box, loss[1]: cls, loss[2]: df1
+                # f_loss = loss.sum()
+                f_loss = loss[1]
+
+            cost = L2_loss + c * f_loss
+            
+            optimizer.zero_grad()
+            cost.backward()
+            optimizer.step()
+
+            # for fake
+            # # Update adversarial images
+            # pre = torch.argmax(outputs.detach(), 1)
+            # # If the attack is not targeted we simply make these two values unequal
+            # condition = (pre != labels).float()
+            import random
+            condition = random.choice([0, 1])
+
+            # Filter out images that get either correct predictions or non-decreasing loss,
+            # i.e., only images that are both misclassified and loss-decreasing are left
+            mask = condition * (best_L2 > current_L2.detach())
+            best_L2 = mask * current_L2.detach() + (1 - mask) * best_L2
+
+            mask = mask.view([-1] + [1] * (dim - 1))
+            best_adv_images = mask * adv_images.detach() + (1 - mask) * best_adv_images
+
+            # Early stop when loss does not converge.
+            # max(.,1) To prevent MODULO BY ZERO error in the next step.
+            if step % max(steps // 10, 1) == 0:
+                if cost.item() > prev_cost:
+                    return best_adv_images
+                prev_cost = cost.item()
+
+        return best_adv_images
+
+    def tanh_space(self, x):
+        return 1 / 2 * (torch.tanh(x) + 1)
+
+    def atanh(self, x):
+        return 0.5 * torch.log((1 + x) / (1 - x))
+    
+    def inverse_tanh_space(self, x):
+        # torch.atanh is only for torch >= 1.7.0
+        # atanh is defined in the range -1 to 1
+        return self.atanh(torch.clamp(x * 2 - 1, min=-1, max=1))
+
+    # f-function in the paper
+    def f(self, outputs, labels, kappa):
+        one_hot_labels = torch.eye(outputs.shape[1]).to(self.device)[labels]
+
+        # find the max logit other than the target class
+        other = torch.max((1 - one_hot_labels) * outputs.to(self.device), dim=1)[0]
+        # get the target class's logit
+        real = torch.max(one_hot_labels * outputs.to(self.device), dim=1)[0]
+
+        return torch.clamp((real - other), min=-kappa)

@@ -13,7 +13,7 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='../input', help='input path')
     parser.add_argument('--output_path', type=str, default='../output', help='output path')
     
-    parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train'], help='process name')
+    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack', 'defend', 'train'], help='process name')
     parser.add_argument('--model', type=str, default='drone_yolo', choices=['drone_yolo'], help='model name')
     parser.add_argument('--data', type=str, default='yolo_drone_detection', choices=['yolo_drone_detection'], help='data name')
     parser.add_argument('--class_number', type=int, default=1, choices=[1, 1000], help='number of class. 1 for yolo_drone_detection, 1000 for imagenet10')
@@ -68,8 +68,7 @@ def yolo_cfg(args):
     data_yaml = f'./nudt_ultralytics/cfgs/datasets/{args.data}.yaml'
     data_cfg = load_yaml(data_yaml)
     dataset_path = os.path.join(f'{args.input_path}/data', args.data)
-    if not os.path.exists(dataset_path):
-        raise ValueError(f"Dataset path not found for data='{args.data}': {dataset_path}")
+    # dataset_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
     data_cfg['path'] = dataset_path
     data_yaml = f'{args.cfg_path}/{args.data}.yaml'
     save_yaml(data_cfg, data_yaml)
@@ -91,16 +90,16 @@ def yolo_cfg(args):
     elif args.process == 'attack':
         cfg.mode = 'validate'
         cfg.batch = 1
-        cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        # cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
+        # cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
+        cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
         cfg.device = args.device
         cfg.attack_or_defend = 'attack'
         cfg.attack_method = args.attack_method
     elif args.process == 'defend':
         cfg.mode = 'predict'
         # cfg.batch = 1
-        cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        # cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
+        # cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
+        cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
         cfg.attack_or_defend = 'defend'
         cfg.defend_method = args.defend_method
     elif args.process == 'train':
