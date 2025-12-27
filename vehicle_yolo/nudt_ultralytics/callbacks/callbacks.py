@@ -135,19 +135,20 @@ def on_val_batch_start(validator):
 
 def on_val_batch_end(validator):
     """Called at the end of each validation batch."""
+    # print(validator.args)
     if not validator.training:
         if validator.args.attack_or_defend == "attack":
             event = "attack"
             data = {
-                "progress": int(validator.batch_i/len(validator.dataloader)),
-                "log": f"[{int(validator.batch_i/len(validator.dataloader))}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
+                "progress": int(validator.batch_i/len(validator.dataloader)*100),
+                "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
             }
             sse_print(event, data)
         elif validator.args.attack_or_defend == "defend":
             event = "defend"
             data = {
-                "progress": int(validator.batch_i/len(validator.dataloader)),
-                "log": f"[{int(validator.batch_i/len(validator.dataloader))}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
+                "progress": int(validator.batch_i/len(validator.dataloader)*100),
+                "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
             }
             sse_print(event, data)
 

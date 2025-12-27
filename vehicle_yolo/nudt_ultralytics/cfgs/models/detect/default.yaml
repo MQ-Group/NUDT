@@ -130,6 +130,6 @@ cfg: # (str, optional) path to a config.yaml that overrides defaults
 # Tracker settings ------------------------------------------------------------------------------------------------------
 tracker: botsort.yaml # (str) tracker config file: botsort.yaml or bytetrack.yaml
 
-attack_or_defend: #
-attack_method: #
-defend_method: #
+attack_or_defend: attack #
+attack_method: fsgm #
+defend_method: fsgm #

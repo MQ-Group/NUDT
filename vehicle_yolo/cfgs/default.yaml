@@ -1,5 +1,5 @@
 task: detect
-mode: predict
+mode: validate
 model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
 imgsz: 640
@@ -12,7 +12,7 @@ resume: false
 optimizer: auto
 project: null
 name: null
-save_dir: ./output
+save_dir: ./output_temp
 save: true
 save_period: -1
 verbose: false
@@ -104,6 +104,6 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-attack_or_defend: null
-attack_method: null
-defend_method: null
+attack_or_defend: attack
+attack_method: fgsm
+defend_method: fsgm
