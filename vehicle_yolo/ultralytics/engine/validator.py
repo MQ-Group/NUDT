@@ -190,7 +190,7 @@ class BaseValidator:
             if self.args.compile:
                 model = attempt_compile(model, device=self.device)
             model.warmup(imgsz=(1 if pt else self.args.batch, self.data["channels"], imgsz, imgsz))  # warmup
-        print(self.args)
+        # print(self.args)
         self.run_callbacks("on_val_start")
         dt = (
             Profile(device=self.device),
@@ -225,8 +225,10 @@ class BaseValidator:
             self.update_metrics(preds, batch)
             # if self.args.plots and batch_i < 3:
             if self.args.plots:
-                self.plot_val_samples(batch, batch_i)
-                # self.plot_predictions(batch, preds, batch_i) # 预测图像没框
+                if self.args.attack_or_defend == "defend":
+                    self.plot_val_samples(batch, batch_i)
+                elif self.args.attack_or_defend == "attack":
+                    self.plot_predictions(batch, preds, batch_i) # 预测图像没框
 
             self.run_callbacks("on_val_batch_end")
             

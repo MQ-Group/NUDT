@@ -97,7 +97,7 @@ def main(args):
         att.run_adv()
         import glob
         ori_dataset_name = glob.glob(os.path.join(f'{args.input_path}/data', '*'))[0].split('/')[-1]
-        adv_data_path = f'{args.output_path}/adv_{ori_dataset_name}/{args.data_name}'
+        adv_data_path = f'{args.output_path}/adv_{ori_dataset_name}'
         os.system(f"cp {args.data_yaml} {adv_data_path}")
         from utils.sse import sse_print
         event = "final_result"
@@ -116,7 +116,8 @@ def main(args):
         event = "dataset_sample_validated"
         data = {
             "status": "success",
-            "message": f"selected {args.selected_samples} samples from {args.data_path} ",
+            "message": "数据集抽取完毕.",
+            "log": f"从{args.data_path}数据集中抽取{args.selected_samples}张样本生成小数据集.",
             "file_name": sampled_data_path
         }
         sse_print(event, data)

@@ -113,7 +113,7 @@ def on_val_start(validator):
         event = "task_initialized"
         data = {
             "status": "success",
-            "message": "Task initialized successfully.",
+            "message": "任务初始化完成.",
             "parameters": dict(validator.args)
         }
         sse_print(event, data)
@@ -121,7 +121,7 @@ def on_val_start(validator):
         event = "model_loaded"
         data = {
             "status": "success",
-            "message": "Model loaded successfully.",
+            "message": "模型加载完成.",
             "model_name": os.path.basename(validator.args.model).split('.')[0],
             "model_path": validator.args.pretrained
         }
@@ -139,14 +139,14 @@ def on_val_batch_end(validator):
         if validator.args.attack_or_defend == "attack":
             event = "attack"
             data = {
-                "progress": f"{int(validator.batch_i/len(validator.dataloader))}",
+                "progress": int(validator.batch_i/len(validator.dataloader)),
                 "log": f"[{int(validator.batch_i/len(validator.dataloader))}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
             }
             sse_print(event, data)
         elif validator.args.attack_or_defend == "defend":
             event = "defend"
             data = {
-                "progress": f"{int(validator.batch_i/len(validator.dataloader))}",
+                "progress": int(validator.batch_i/len(validator.dataloader)),
                 "log": f"[{int(validator.batch_i/len(validator.dataloader))}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
             }
             sse_print(event, data)
