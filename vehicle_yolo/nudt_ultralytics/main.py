@@ -96,15 +96,17 @@ def main(args):
         att = attacks(args)
         att.run_adv()
         import glob
-        ori_dataset_name = glob.glob(os.path.join(f'{args.input_path}/data', '*'))[0].split('/')[-1]
-        adv_data_path = f'{args.output_path}/adv_{ori_dataset_name}'
-        os.system(f"cp {args.data_yaml} {adv_data_path}")
+        # ori_dataset_name = glob.glob(os.path.join(f'{args.input_path}/data', '*'))[0].split('/')[-1]
+        # adv_data_path = f'{args.output_path}/adv_{ori_dataset_name}'
+        # os.system(f"cp {args.data_yaml} {adv_data_path}")
+        os.system(f"cp {args.data_yaml} {args.output_path}")
         from utils.sse import sse_print
         event = "final_result"
         data = {
             "message": "对抗样本生成完毕.",
             "progress": "100",
-            "log": f"[100%] 对抗样本保存在{args.output_path}/adv_{ori_dataset_name}, 包含{args.selected_samples}个对抗样本."
+            # "log": f"[100%] 对抗样本保存在{args.output_path}/adv_{ori_dataset_name}, 包含{args.selected_samples}个对抗样本."
+            "log": f"[100%] 对抗样本保存在{args.output_path}/{args.data_name}, 包含{args.selected_samples}个对抗样本."
         }
         sse_print(event, data)
     elif args.process == 'sample':
