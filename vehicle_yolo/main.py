@@ -49,20 +49,18 @@ def parse_args():
             args_dict_environ[key] = type_switch(os.getenv(key, value), value)
     args_easydict = EasyDict(args_dict_environ)
     return args_easydict
-
-
+    
 def type_switch(environ_value, value):
-    if isinstance(value, int):
+    if isinstance(value, bool):
+        return bool(environ_value)
+    elif isinstance(value, int):
         return int(environ_value)
     elif isinstance(value, float):
         return float(environ_value)
-    elif isinstance(value, bool):
-        return bool(environ_value)
     elif isinstance(value, str):
         return environ_value
     
 def yolo_cfg(args):
-    
     model_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.yaml'))[0]
     # print(model_yaml)
     model_name = os.path.splitext(os.path.basename(model_yaml))[0]
