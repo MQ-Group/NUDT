@@ -159,12 +159,13 @@ def sse_output_path_validated(args):
             
         
 
-def sse_adv_samples_gen_validated(adv_image_name, progress):
+def sse_adv_samples_gen_validated(adv_image_name, progress, selected_samples):
         event = "adversarial_samples_generation_validated"
         data = {
             "status": "success",
             "message": "adversarial sample is generated.",
-            "progress": progress,
+            "progress": int(progress/selected_samples*100),
+            "log": f"[{int(progress/selected_samples*100)}%] generating {progress}th adversarial sample, out of a total of {selected_samples}",
             "file_name": adv_image_name
         }
         sse_print(event, data)

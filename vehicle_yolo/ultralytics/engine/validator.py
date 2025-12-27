@@ -226,7 +226,7 @@ class BaseValidator:
             # if self.args.plots and batch_i < 3:
             if self.args.plots:
                 self.plot_val_samples(batch, batch_i)
-                self.plot_predictions(batch, preds, batch_i)
+                # self.plot_predictions(batch, preds, batch_i) # 预测图像没框
 
             self.run_callbacks("on_val_batch_end")
             

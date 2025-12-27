@@ -82,9 +82,10 @@ class attacks:
         # print(ori_image_file)
         ori_image_name = ori_image_file.split('/')[-1]
         ori_image_flod = ori_image_file.split('/')[-3]
-        # ori_dataset_name = glob.glob(os.path.join(f'{self.args.input_path}/data', '*/'))[0].split('/')[-2] # 如果保存对抗样本不存名字
-        ori_dataset_name = self.args.data_name
-        adv_image_flod = f'{self.cfg.save_dir}/adv_{ori_dataset_name}/{ori_image_flod}/{self.cfg.split}'
+        ori_dataset_name = glob.glob(os.path.join(f'{self.args.input_path}/data', '*'))[0].split('/')[-1]
+        
+        ori_data_name = self.args.data_name
+        adv_image_flod = f'{self.cfg.save_dir}/adv_{ori_dataset_name}/{ori_data_name}/{ori_image_flod}/{self.cfg.split}'
         # print(adv_image_flod)
         os.makedirs(adv_image_flod, exist_ok=True)
         adv_image_file = f'{adv_image_flod}/{ori_image_name}'
@@ -93,12 +94,12 @@ class attacks:
         to_pil = transforms.ToPILImage()
         pil_image = to_pil(adv_image)
         pil_image.save(adv_image_file)
-        sse_adv_samples_gen_validated(adv_image_file, progress)
+        sse_adv_samples_gen_validated(adv_image_file, progress, self.args.selected_samples)
         
         ori_label_flod = 'labels'
         ori_label_file = ori_image_file.replace(ori_image_flod, ori_label_flod).split('.')[0] + '.txt'
         ori_label_name = ori_label_file.split('/')[-1]
-        adv_label_flod = f'{self.cfg.save_dir}/adv_{ori_dataset_name}/{ori_label_flod}/{self.cfg.split}'
+        adv_label_flod = f'{self.cfg.save_dir}/adv_{ori_dataset_name}/{ori_data_name}/{ori_label_flod}/{self.cfg.split}'
         os.makedirs(adv_label_flod, exist_ok=True)
         adv_label_file = f'{adv_label_flod}/{ori_label_name}'
         os.system(f"cp {ori_label_file} {adv_label_file}")

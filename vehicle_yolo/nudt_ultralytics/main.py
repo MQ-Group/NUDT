@@ -7,6 +7,7 @@ YOLO_CONFIG_DIR = str(Path(cfg_dir).resolve())
 # print('-'*100)
 os.environ['YOLO_CONFIG_DIR'] = YOLO_CONFIG_DIR
 
+import glob
 import yaml
 from easydict import EasyDict
 from ultralytics import YOLO
@@ -94,11 +95,21 @@ def main(args):
         from attacks.attacks import attacks
         att = attacks(args)
         att.run_adv()
+        import glob
+        ori_dataset_name = glob.glob(os.path.join(f'{args.input_path}/data', '*'))[0].split('/')[-1]
+        adv_data_path = f'{args.output_path}/adv_{ori_dataset_name}/{args.data_name}'
+        os.system(f"cp {args.data_yaml} {adv_data_path}")
+        from utils.sse import sse_print
+        event = "final_result"
+        data = {
+            "message": "geneatre adversarial sample done.",
+            "log": f"adversarial sample dataset is saved in {args.output_path}/adv_{ori_dataset_name}, including {args.selected_samples} adversarial sample"
+        }
+        sse_print(event, data)
     elif args.process == 'sample':
         from sample.sample import sample_dataset
         sampled_data_path = f'{args.output_path}/sampled_' + args.data_name
         sample_dataset(source_dir=args.data_path, target_dir=sampled_data_path, train_count=args.selected_samples, val_count=args.selected_samples, seed=None)
-        import os
         os.system(f"cp {args.data_yaml} {sampled_data_path}")
         from utils.sse import sse_print
         event = "dataset_sample_validated"
