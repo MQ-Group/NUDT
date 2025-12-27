@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='./input', help='input path')
     parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='attack', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
+    parser.add_argument('--process', type=str, default='defend', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
     # parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
     # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
     # parser.add_argument('--class_number', type=int, default=8, choices=[8, 10, 4, 1, 1000], help='number of class. 8 for kitti, 10 for bdd100k, 4 for ua-detrac, 5 for special_vehicle, 1 for dawn, 1 for flir_adas')
@@ -43,7 +43,10 @@ def parse_args():
     args_dict = vars(args)
     args_dict_environ = {}
     for key, value in args_dict.items():
-        args_dict_environ[key] = type_switch(os.getenv(key.upper(), value), value)
+        if key in ['input_path', 'output_path']:
+            args_dict_environ[key] = type_switch(os.getenv(key.upper(), value), value)
+        else:
+            args_dict_environ[key] = type_switch(os.getenv(key, value), value)
     args_easydict = EasyDict(args_dict_environ)
     return args_easydict
 
@@ -106,7 +109,7 @@ def yolo_cfg(args):
         cfg.device = args.device
     elif args.process == 'attack':
         cfg.mode = 'validate'
-        cfg.batch = 1
+        cfg.batch = args.batch
         cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
         cfg.device = args.device
         cfg.attack_or_defend = 'attack'
@@ -123,10 +126,11 @@ def yolo_cfg(args):
         cfg.batch = args.batch
         cfg.device = args.device
     elif args.process == 'test':
-        cfg.mode = 'test'
-        cfg.epochs = args.epochs
+        cfg.mode = 'validate'
         cfg.batch = args.batch
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
         cfg.device = args.device
+        
     
     cfg = dict(cfg)
     args.cfg_yaml = './cfgs/default.yaml'

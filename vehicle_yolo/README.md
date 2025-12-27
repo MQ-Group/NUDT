@@ -7,9 +7,9 @@
 * `input_path`（必填）: 指定输入路径，在此路径下有权重文件和数据集文件。
 * `output_path`（必填）: 指定输出路径，在此路径下保存生成的对抗样本和防御训练的权重。
 * `process`（必填）: 指定进程名称，支持枚举值（第一个为默认值）:`adv`, `attack`, `defend`, `train`。
-* `model`（必填）: 指定模型名称，支持枚举值:`yolov5`, `yolov8`, `yolov10` 。
-* `data`（必填）: 指定数据集，支持枚举值:`kitti`, `bdd100k`, `ua-detrac`, `dawn`, `special_vehicle`。
-* `class_number`（必填）: 指定目标类别数量，与数据集绑定，对于kitti数据集为`8` 。
+* ~~`model`（必填）: 指定模型名称，支持枚举值:`yolov5`, `yolov8`, `yolov10` 。~~
+* ~~`data`（必填）: 指定数据集，支持枚举值:`kitti`, `bdd100k`, `ua-detrac`, `dawn`, `special_vehicle`。~~
+* ~~`class_number`（必填）: 指定目标类别数量，与数据集绑定，对于kitti数据集为`8` 。~~
 * `attack_method`（选填）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `cw`, `deepfool`, `bim`, `fgsm`, `pgd`。
 * `defend_method`（选填）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`scale`, `compression`, `fgsm_denoise`, `neural_cleanse`, `pgd_purifier`。
 * `epochs`（选填，默认为`100`）：训练迭代次数，若`process`为`train`时有效。
@@ -39,9 +39,13 @@ docker build -t vehicle_yolo:latest .
 ```
 input/
 ├── model/
-│   └── weight.pth              # 预训练模型权重
+│   └── model_name/                 # 模型目录
+│       └── weight.pt               # 模型权重
+│       └── model_cfg.yaml          # 模型配置文件
 └── data/
-    └── dataset_name/           # 数据集目录
+    └── data_name/                  # 数据集目录
+        └── data/                   # 数据集
+        └── data_cfg.yaml           # 数据集配置文件
 ```
 
 

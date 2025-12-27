@@ -1,21 +1,16 @@
 
-path: bdd10k # dataset root dir
+path: special_vehicle # dataset root dir
 train: images/train # train images (relative to 'path') 5985 images
 val: images/val # val images (relative to 'path') 1496 images
 
-nc: 10
+nc: 5
 
 names:
-  0: car
-  1: bus
-  2: person
-  3: bike
-  4: truck
-  5: motor
-  6: train
-  7: rider
-  8: traffic sign
-  9: traffic light
+  0: trunk
+  1: xiaofang
+  2: zatu
+  3: police
+  4: gongcheng
 
 # Download script/URL (optional)
-download: 
+download: https://tianchi.aliyun.com/dataset/180177

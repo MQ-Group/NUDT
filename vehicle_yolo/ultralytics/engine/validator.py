@@ -190,7 +190,7 @@ class BaseValidator:
             if self.args.compile:
                 model = attempt_compile(model, device=self.device)
             model.warmup(imgsz=(1 if pt else self.args.batch, self.data["channels"], imgsz, imgsz))  # warmup
-
+        # print(self.args)
         self.run_callbacks("on_val_start")
         dt = (
             Profile(device=self.device),
@@ -204,6 +204,7 @@ class BaseValidator:
         for batch_i, batch in enumerate(bar):
             self.run_callbacks("on_val_batch_start")
             self.batch_i = batch_i
+            self.original_image = batch["im_file"]
             # Preprocess
             with dt[0]:
                 batch = self.preprocess(batch)
@@ -222,13 +223,15 @@ class BaseValidator:
                 preds = self.postprocess(preds)
 
             self.update_metrics(preds, batch)
-            if self.args.plots and batch_i < 3:
+            # if self.args.plots and batch_i < 3:
+            if self.args.plots:
                 self.plot_val_samples(batch, batch_i)
                 self.plot_predictions(batch, preds, batch_i)
 
             self.run_callbacks("on_val_batch_end")
             
         stats = self.get_stats()
+        
         self.speed = dict(zip(self.speed.keys(), (x.t / len(self.dataloader.dataset) * 1e3 for x in dt)))
         self.finalize_metrics()
         self.print_results()

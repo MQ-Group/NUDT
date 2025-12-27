@@ -138,7 +138,9 @@ def on_val_batch_end(validator):
     if not validator.training:
         event = "log"
         data = {
-            "progress": validator.batch_i
+            "progress": int(validator.batch_i/len(validator.dataloader)),
+            "original_image": validator.original_image[0],
+            "plot_predictions_image": f"{validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
         }
         sse_print(event, data)
 

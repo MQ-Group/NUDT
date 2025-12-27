@@ -39,9 +39,13 @@ docker build -t drone_yolo:latest .
 ```
 input/
 ├── model/
-│   └── weight.pth              # 预训练模型权重
+│   └── model_name/                 # 模型目录
+│       └── weight.pt               # 模型权重
+│       └── model_cfg.yaml          # 模型配置文件
 └── data/
-    └── dataset_name/           # 数据集目录
+    └── data_name/                  # 数据集目录
+        └── data/                   # 数据集
+        └── data_cfg.yaml           # 数据集配置文件
 ```
 
 

@@ -13,6 +13,8 @@ path: kitti # dataset root dir
 train: images/train # train images (relative to 'path') 5985 images
 val: images/val # val images (relative to 'path') 1496 images
 
+nc: 8
+
 names:
   0: car
   1: van

@@ -1,21 +1,12 @@
 
-path: bdd10k # dataset root dir
+path: dawn # dataset root dir
 train: images/train # train images (relative to 'path') 5985 images
 val: images/val # val images (relative to 'path') 1496 images
 
-nc: 10
+nc: 1
 
 names:
   0: car
-  1: bus
-  2: person
-  3: bike
-  4: truck
-  5: motor
-  6: train
-  7: rider
-  8: traffic sign
-  9: traffic light
 
 # Download script/URL (optional)
-download: 
+download: https://www.kaggle.com/datasets/shuvoalok/dawn-dataset

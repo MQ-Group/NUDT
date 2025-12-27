@@ -127,6 +127,9 @@ class DetectionValidator(BaseValidator):
             end2end=self.end2end,
             rotated=self.args.task == "obb",
         )
+        # print(len(outputs))
+        # for x in outputs:
+        #     print({"bboxes": x[:, :4], "conf": x[:, 4], "cls": x[:, 5], "extra": x[:, 6:]})
         return [{"bboxes": x[:, :4], "conf": x[:, 4], "cls": x[:, 5], "extra": x[:, 6:]} for x in outputs]
 
     def _prepare_batch(self, si: int, batch: dict[str, Any]) -> dict[str, Any]:
@@ -183,9 +186,13 @@ class DetectionValidator(BaseValidator):
             self.seen += 1
             pbatch = self._prepare_batch(si, batch)
             predn = self._prepare_pred(pred)
-
+            
             cls = pbatch["cls"].cpu().numpy()
             no_pred = predn["cls"].shape[0] == 0
+            # print('-'*100)
+            # print(pbatch["cls"].shape) # torch.Size([8])
+            # print(predn["cls"].shape) # torch.Size([300])
+            # print(no_pred) # False
             self.metrics.update_stats(
                 {
                     **self._process_batch(predn, pbatch),
@@ -225,6 +232,8 @@ class DetectionValidator(BaseValidator):
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
         self.metrics.save_dir = self.save_dir
+        
+        
 
     def get_stats(self) -> dict[str, Any]:
         """
@@ -343,6 +352,7 @@ class DetectionValidator(BaseValidator):
         keys = preds[0].keys()
         max_det = max_det or self.args.max_det
         batched_preds = {k: torch.cat([x[k][:max_det] for x in preds], dim=0) for k in keys}
+        
         # TODO: fix this
         batched_preds["bboxes"][:, :4] = ops.xyxy2xywh(batched_preds["bboxes"][:, :4])  # convert to xywh format
         plot_images(
