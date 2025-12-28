@@ -797,7 +797,7 @@ class ClassificationDataset:
         )
         
         ##########################defend################################################
-        self.defend_en = True if args.attack_or_defend == 'defend' else False
+        self.defend_en = True if args.process == 'defend' else False
         self.defend_method = args.defend_method
         
         if self.defend_en:

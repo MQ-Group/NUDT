@@ -232,6 +232,7 @@ class DetectionValidator(BaseValidator):
         self.metrics.speed = self.speed
         self.metrics.confusion_matrix = self.confusion_matrix
         self.metrics.save_dir = self.save_dir
+        # print(self.metrics.speed) # {'preprocess': 1.0485060346178352, 'inference': 47.69135609811999, 'loss': 0.001967176147562297, 'postprocess': 3.1772129384571697}
         
         
 
@@ -326,10 +327,20 @@ class DetectionValidator(BaseValidator):
             batch (dict[str, Any]): Batch containing images and annotations.
             ni (int): Batch index.
         """
+        import os
+        orignal_image_name = os.path.basename(batch["im_file"][0])
+        if self.args.process == "defend":
+            save_fold = "output_images"
+        elif self.args.process == "attack":
+            save_fold = "input_images"
+        save_path = self.save_dir / save_fold
+        os.makedirs(save_path, exist_ok=True)
+        save_file = save_path / orignal_image_name
         plot_images(
             labels=batch,
             paths=batch["im_file"],
-            fname=self.save_dir / f"val_batch{ni}_labels.jpg",
+            # fname=self.save_dir / f"val_batch{ni}_labels.jpg",
+            fname=save_file,
             names=self.names,
             on_plot=self.on_plot,
         )
@@ -355,11 +366,22 @@ class DetectionValidator(BaseValidator):
         
         # TODO: fix this
         batched_preds["bboxes"][:, :4] = ops.xyxy2xywh(batched_preds["bboxes"][:, :4])  # convert to xywh format
+        
+        import os
+        orignal_image_name = os.path.basename(batch["im_file"][0])
+        if self.args.process == "defend":
+            save_fold = "input_images"
+        elif self.args.process == "attack":
+            save_fold = "output_images"
+        save_path = self.save_dir / save_fold
+        os.makedirs(save_path, exist_ok=True)
+        save_file = save_path / orignal_image_name
         plot_images(
             images=batch["img"],
             labels=batched_preds,
             paths=batch["im_file"],
-            fname=self.save_dir / f"val_batch{ni}_pred.jpg",
+            # fname=self.save_dir / f"val_batch{ni}_pred.jpg",
+            fname=save_file,
             names=self.names,
             on_plot=self.on_plot,
         )  # pred

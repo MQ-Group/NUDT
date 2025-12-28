@@ -2,6 +2,8 @@ import shutil
 import random
 from pathlib import Path
 
+from utils.sse import sse_print
+
 def sample_dataset(source_dir, target_dir, train_count, val_count, seed=None):
     """
     从源数据集中随机选取指定数量的样本创建小数据集
@@ -50,12 +52,11 @@ def sample_dataset(source_dir, target_dir, train_count, val_count, seed=None):
         
         if not image_files:
             # print(f"警告: {src_img_dir} 中没有找到图片文件")
-            from utils.sse import sse_print
+            
             event = "dataset_sample_validated"
             data = {
                 "status": "failure",
-                "message": f"{src_img_dir} samples not found ",
-                "file_name": args.input_path
+                "message": f"{src_img_dir}中没有找到图片文件"
             }
             sse_print(event, data)
             continue
@@ -65,12 +66,10 @@ def sample_dataset(source_dir, target_dir, train_count, val_count, seed=None):
         
         if n_select < selected_counts[split]:
             # print(f"警告: {split} 集只有 {len(image_files)} 个样本，将选取全部")
-            from utils.sse import sse_print
             event = "dataset_sample_validated"
             data = {
                 "status": "warning",
-                "message": f"{split} set contains only {len(image_files)} samples, all will be selected.",
-                "file_name": args.input_path
+                "message": f"警告: {split}集只有{len(image_files)}个样本，将选取全部."
             }
             sse_print(event, data)
         
@@ -80,6 +79,20 @@ def sample_dataset(source_dir, target_dir, train_count, val_count, seed=None):
         # print(f"\n{split} 集:")
         # print(f"  总样本数: {len(image_files)}")
         # print(f"  选取数量: {n_select}")
+        event = "dataset_sample_validated"
+        if split == 'train':
+            data = {
+                "message": "正在执行数据集抽取...",
+                "progress": 0,
+                "log": f"[0%] 从{split}集{len(image_files)}张样本中抽取{n_select}张样本."
+            }
+        else:
+            data = {
+                "message": "正在执行数据集抽取...",
+                "progress": 50,
+                "log": f"[50%] 从{split}集{len(image_files)}张样本中抽取{n_select}张样本."
+            }
+        sse_print(event, data)
         
         # 复制选中的文件
         for img_path in selected_images:
@@ -93,7 +106,13 @@ def sample_dataset(source_dir, target_dir, train_count, val_count, seed=None):
             if label_path.exists():
                 shutil.copy2(label_path, dst_label_dir / label_path.name)
             else:
-                print(f"警告: 标签文件 {label_path} 不存在")
+                # print(f"警告: 标签文件 {label_path} 不存在")
+                event = "dataset_sample_validated"
+                data = {
+                    "status": "warning",
+                    "message": f"标签文件{label_path}不存在"
+                }
+                sse_print(event, data)
         
         actual_counts[split] = n_select
     

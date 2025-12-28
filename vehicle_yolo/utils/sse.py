@@ -253,13 +253,4 @@ def sse_model_loaded(model_name, weight_path):
     sse_print(event, data)
 
 
-
-def sse_log(progress, log):
-    event = "log"
-    data = {
-        "progress": progress,
-        "log": log
-    }
-    sse_print(event, data)
-
     

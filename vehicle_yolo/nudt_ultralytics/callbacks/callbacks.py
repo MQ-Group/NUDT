@@ -16,7 +16,7 @@ def on_pretrain_routine_end(trainer):
     event = "task_initialized"
     data = {
         "status": "success",
-        "message": "Task initialized successfully.",
+        "message": "任务初始化完成.",
         "parameters": dict(trainer.args)
     }
     sse_print(event, data)
@@ -25,7 +25,7 @@ def on_pretrain_routine_end(trainer):
         event = "model_loaded"
         data = {
             "status": "success",
-            "message": "Model loaded successfully.",
+            "message": "模型加载完成.",
             "model_name": os.path.basename(trainer.args.model).split('.')[0],
             "model_path": trainer.args.pretrained
         }
@@ -59,7 +59,20 @@ def on_before_zero_grad(trainer):
 
 def on_train_batch_end(trainer):
     """Called at the end of each training batch."""
-    pass
+    event = "train"
+    data = {
+        "message": "正在执行训练...",
+        "progress": int(trainer.epoch/trainer.epochs*100),
+        "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行训练...",
+        "details": {
+            "batch": f"{trainer.batch_i + 1}/{trainer.total_batch}",
+            "batch size": trainer.batch_size,
+            "image size": trainer.args.imgsz,
+            "GPU memory util": f"{trainer._get_memory():.3g}G",
+            "loss": trainer.loss.item(), 
+        }
+    }
+    sse_print(event, data)
 
 
 def on_train_epoch_end(trainer):
@@ -69,17 +82,60 @@ def on_train_epoch_end(trainer):
 
 def on_fit_epoch_end(trainer):
     """Called at the end of each fit epoch (train + val)."""
-    pass
+    ############################################################
+    event = "train"
+    data = {
+        "message": "正在执行训练...",
+        "progress": int(trainer.epoch/trainer.epochs*100),
+        "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行训练...",
+        "details": {
+            "epoch": f"{trainer.epoch + 1}/{trainer.epochs}",
+            "batch size": trainer.batch_size,
+            "image size": trainer.args.imgsz,
+            "GPU memory util": f"{trainer._get_memory():.3g}G",
+            "epoch_time": trainer.epoch_time, 
+            "loss": trainer.loss.item(), 
+            "lr": trainer.lr, 
+        }
+    }
+    sse_print(event, data)
+    # print(self.args)
+    # with open(f'{self.args.save_dir}/log.txt', 'a', encoding='utf-8') as f:
+    #     import json
+    #     json_str = json.dumps(data, ensure_ascii=False, default=lambda obj: obj.item() if isinstance(obj, np.generic) else obj)
+    #     f.write(json_str)
+    #     f.write('\n')
+    ############################################################
 
 
 def on_model_save(trainer):
     """Called when the model is saved."""
-    pass
+    event = "train"
+    data = {
+        "message": "正在执行训练...",
+        "progress": int(trainer.epoch/trainer.epochs*100),
+        "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 训练模型权重保存: {trainer.wdir}/epoch{trainer.epoch}.pt",
+    }
+    sse_print(event, data)
 
 
 def on_train_end(trainer):
     """Called when the training ends."""
-    pass
+    event = "final_result"
+    data = {
+        "message": "训练完成, 结果信息已保存",
+        "progress": 100,
+        "log": f"[100%] 训练完成, 结果信息已保存",
+        "details": {
+            "labels image": f"{trainer.save_dir}/labels.jpg",
+            "results image": f"{trainer.save_dir}/results.png",
+            "results csv": f"{trainer.save_dir}/results.csv",
+            "display images": [f"{trainer.save_dir}/train_batch{i}.png" for i in trainer.plot_idx],
+            "weight": trainer.wdir,
+            "summary": trainer.metrics
+        }
+    }
+    sse_print(event, data)
 
 
 def on_params_update(trainer):
@@ -96,20 +152,14 @@ def teardown(trainer):
     #     "summary": trainer.metrics
     # }
     # sse_print(event, data)
-    
-    event = "final_result"
-    data = {
-        "summary": trainer.metrics
-    }
-    sse_print(event, data)
-
+    pass
 
 # Validator callbacks --------------------------------------------------------------------------------------------------
 
 
 def on_val_start(validator):
     """Called when the validation starts."""
-    if not validator.training:
+    if validator.args.process in ['test', 'attack', 'defend']:
         event = "task_initialized"
         data = {
             "status": "success",
@@ -122,8 +172,8 @@ def on_val_start(validator):
         data = {
             "status": "success",
             "message": "模型加载完成.",
-            "model_name": os.path.basename(validator.args.model).split('.')[0],
-            "model_path": validator.args.pretrained
+            "model name": os.path.basename(validator.args.model).split('.')[0],
+            "model path": validator.args.pretrained
         }
         sse_print(event, data)
 
@@ -136,39 +186,104 @@ def on_val_batch_start(validator):
 def on_val_batch_end(validator):
     """Called at the end of each validation batch."""
     # print(validator.args)
-    if not validator.training:
-        if validator.args.attack_or_defend == "attack":
-            event = "attack"
-            data = {
-                "progress": int(validator.batch_i/len(validator.dataloader)*100),
-                "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
-            }
-            sse_print(event, data)
-        elif validator.args.attack_or_defend == "defend":
-            event = "defend"
-            data = {
-                "progress": int(validator.batch_i/len(validator.dataloader)*100),
-                "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 输入图像: {validator.original_image[0]}, 加框识别图像: {validator.save_dir}/val_batch{validator.batch_i}_pred.jpg"
-            }
-            sse_print(event, data)
+    if validator.args.process == "attack":
+        event = "attack"
+        data = {
+            "message": "正在执行攻击...",
+            "progress": int(validator.batch_i/len(validator.dataloader)*100),
+            "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 输入图像: {validator.save_dir}/input_images/{os.path.basename(validator.orignal_image[0])}, 输出图像: {validator.save_dir}/output_images/{os.path.basename(validator.orignal_image[0])}"
+        }
+        sse_print(event, data)
+    elif validator.args.process == "defend":
+        event = "defend"
+        data = {
+            "message": "正在执行防御...",
+            "progress": int(validator.batch_i/len(validator.dataloader)*100),
+            "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 输入图像: {validator.save_dir}/input_images/{os.path.basename(validator.orignal_image[0])}, 输出图像: {validator.save_dir}/output_images/{os.path.basename(validator.orignal_image[0])}"
+        }
+        sse_print(event, data)
+    else:
+        event = "test"
+        data = {
+            "message": "正在执行测试...",
+            "progress": int(validator.batch_i/len(validator.dataloader)*100),
+            "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 正在执行测试..."
+        }
+        sse_print(event, data)
 
 
 def on_val_end(validator):
     """Called when the validation ends."""
-    # if not validator.training:
-    #     event = "task_completed"
-    #     data = {
-    #         "status": "success",
-    #         "message": "Task completed successfully.",
-    #         "summary": validator.metrics.summary()
-    #     }
-    #     sse_print(event, data)
-    
-    if not validator.training:
+    if validator.args.process in "defend":
         event = "final_result"
         data = {
-            "progress": "100",
-            "log": f"[100%] summary: {validator.metrics.summary()}"
+            "message": "防御执行完成, 结果信息已保存",
+            "progress": 100,
+            "log": f"[100%] 防御执行完成, 结果信息已保存",
+            "details": {
+                "input_images": f"{validator.save_dir}/input_images/",
+                "output_images": f"{validator.save_dir}/output_images/",
+                "curve": {
+                    "混淆矩阵": f"{validator.save_dir}/confusion_matrix.png",
+                    "归一化混淆矩阵": f"{validator.save_dir}/confusion_matrix_normalized.png",
+                    "F1-置信度曲线": f"{validator.save_dir}/BoxF1_curve.png",
+                    "精度-置信度曲线": f"{validator.save_dir}/BoxP_curve.png",
+                    "精度-回调曲线": f"{validator.save_dir}/BoxPR_curve.png",
+                    "回调-置信度曲线": f"{validator.save_dir}/BoxR_curve.png"
+                },
+                "speed": validator.metrics.speed,
+                "summary": {
+                    f"class {i} summary": class_summary for i, class_summary in enumerate(validator.metrics.summary())
+                }
+            }
+        }
+        sse_print(event, data)
+    elif validator.args.process in "attack":
+        event = "final_result"
+        data = {
+            "message": "攻击执行完成, 结果信息已保存",
+            "progress": 100,
+            "log": f"[100%] 攻击执行完成, 结果信息已保存",
+            "details": {
+                "input_images": f"{validator.save_dir}/input_images/",
+                "output_images": f"{validator.save_dir}/output_images/",
+                "curve": {
+                    "混淆矩阵": f"{validator.save_dir}/confusion_matrix.png",
+                    "归一化混淆矩阵": f"{validator.save_dir}/confusion_matrix_normalized.png",
+                    "F1-置信度曲线": f"{validator.save_dir}/BoxF1_curve.png",
+                    "精度-置信度曲线": f"{validator.save_dir}/BoxP_curve.png",
+                    "精度-回调曲线": f"{validator.save_dir}/BoxPR_curve.png",
+                    "回调-置信度曲线": f"{validator.save_dir}/BoxR_curve.png"
+                },
+                "speed": validator.metrics.speed,
+                "summary": {
+                    f"class {i} summary": class_summary for i, class_summary in enumerate(validator.metrics.summary())
+                }
+            }
+        }
+        sse_print(event, data)
+    else:
+        event = "final_result"
+        data = {
+            "message": "测试执行完成, 结果信息已保存",
+            "progress": 100,
+            "log": f"[100%] 测试执行完成, 结果信息已保存",
+            "details": {
+                "input_images": f"{validator.save_dir}/input_images/",
+                "output_images": f"{validator.save_dir}/output_images/",
+                "curve": {
+                    "混淆矩阵": f"{validator.save_dir}/confusion_matrix.png",
+                    "归一化混淆矩阵": f"{validator.save_dir}/confusion_matrix_normalized.png",
+                    "F1-置信度曲线": f"{validator.save_dir}/BoxF1_curve.png",
+                    "精度-置信度曲线": f"{validator.save_dir}/BoxP_curve.png",
+                    "精度-回调曲线": f"{validator.save_dir}/BoxPR_curve.png",
+                    "回调-置信度曲线": f"{validator.save_dir}/BoxR_curve.png"
+                },
+                "speed": validator.metrics.speed,
+                "summary": {
+                    f"class {i} summary": class_summary for i, class_summary in enumerate(validator.metrics.summary())
+                }
+            }
         }
         sse_print(event, data)
 

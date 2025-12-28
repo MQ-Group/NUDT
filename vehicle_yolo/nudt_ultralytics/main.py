@@ -104,25 +104,31 @@ def main(args):
         event = "final_result"
         data = {
             "message": "对抗样本生成完毕.",
-            "progress": "100",
+            "progress": 100,
             # "log": f"[100%] 对抗样本保存在{args.output_path}/adv_{ori_dataset_name}, 包含{args.selected_samples}个对抗样本."
             "log": f"[100%] 对抗样本保存在{args.output_path}/{args.data_name}, 包含{args.selected_samples}个对抗样本."
         }
         sse_print(event, data)
+    elif args.process == 'test':
+        model = YOLO(model=cfg.model, task=cfg.task, verbose=cfg.verbose).load(cfg.pretrained)  # task: 'detect', 'segment', 'classify', 'pose', 'obb'. verbose: Display model info on load.
+        for (event, func) in callbacks_dict.items():
+            model.add_callback(event, func)
+        results = model.val(data=cfg.data)
     elif args.process == 'sample':
         from sample.sample import sample_dataset
         sampled_data_path = f'{args.output_path}/sampled_' + args.data_name
         sample_dataset(source_dir=args.data_path, target_dir=sampled_data_path, train_count=args.selected_samples, val_count=args.selected_samples, seed=None)
         os.system(f"cp {args.data_yaml} {sampled_data_path}")
+        
         from utils.sse import sse_print
-        event = "dataset_sample_validated"
+        event = "final_result"
         data = {
-            "status": "success",
             "message": "数据集抽取完毕.",
-            "log": f"从{args.data_path}数据集中抽取{args.selected_samples}张样本生成小数据集.",
-            "file_name": sampled_data_path
+            "progress": 100,
+            "log": f"[100%] 从{args.data_path}数据集中抽取{args.selected_samples}张样本生成小数据集保存在sampled_data_path"
         }
         sse_print(event, data)
+    
 
 def parse_args():
     parser = argparse.ArgumentParser()

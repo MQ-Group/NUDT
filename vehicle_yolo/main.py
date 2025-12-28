@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='./input', help='input path')
     parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='attack', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
+    parser.add_argument('--process', type=str, default='defend', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
     # parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
     # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
     # parser.add_argument('--class_number', type=int, default=8, choices=[8, 10, 4, 1, 1000], help='number of class. 8 for kitti, 10 for bdd100k, 4 for ua-detrac, 5 for special_vehicle, 1 for dawn, 1 for flir_adas')
@@ -24,10 +24,10 @@ def parse_args():
     parser.add_argument('--attack_method', type=str, default='fgsm', choices=['pgd', 'fgsm', 'bim', 'deepfool', 'cw'], help='attack method')
     parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
     
-    parser.add_argument('--epochs', type=int, default=100, help='epochs')
-    parser.add_argument('--batch', type=int, default=1, help='batch size')
+    parser.add_argument('--epochs', type=int, default=1, help='epochs')
+    parser.add_argument('--batch', type=int, default=16, help='batch size')
     # parser.add_argument('--device', type=int, default=0, help='which gpu for cuda')
-    parser.add_argument('--device', type=str, default='cpu', help='which gpu for cuda')
+    parser.add_argument('--device', type=str, default='gpu', choices=['cpu', 'gpu'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
     parser.add_argument('--selected_samples', type=int, default=10, help='the number of generated adversarial sample for attack method')
@@ -93,6 +93,7 @@ def yolo_cfg(args):
     cfg_yaml = f'./nudt_ultralytics/cfgs/models/{args.task}/default.yaml'
     cfg = load_yaml(cfg_yaml)
     cfg = EasyDict(cfg)
+    cfg.process = args.process
     cfg.task = args.task
     cfg.model = model_yaml
     if args.task == 'classify':
@@ -110,30 +111,31 @@ def yolo_cfg(args):
         cfg.mode = 'validate'
         cfg.batch = args.batch
         cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
-        cfg.device = args.device
+        cfg.device = args.device if args.device == 'cpu' else -1
         cfg.workers = args.workers
-        cfg.attack_or_defend = 'attack'
         cfg.attack_method = args.attack_method
     elif args.process == 'defend':
         cfg.mode = 'predict'
         cfg.batch = args.batch
         cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
-        cfg.attack_or_defend = 'defend'
         cfg.defend_method = args.defend_method
         cfg.workers = args.workers
     elif args.process == 'train':
         cfg.mode = 'train'
         cfg.epochs = args.epochs
         cfg.batch = args.batch
-        cfg.device = args.device
+        cfg.device = args.device if args.device == 'cpu' else -1
         cfg.workers = args.workers
     elif args.process == 'test':
         cfg.mode = 'validate'
         cfg.batch = args.batch
         cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
-        cfg.device = args.device
+        cfg.device = args.device if args.device == 'cpu' else -1
         cfg.workers = args.workers
-        
+    elif args.process == 'sample':
+        # dont need modify cfg
+        pass
+    
     # print(cfg)
     cfg = dict(cfg)
     args.cfg_yaml = './cfgs/default.yaml'

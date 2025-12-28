@@ -396,7 +396,9 @@ class BaseTrainer:
                 LOGGER.info(self.progress_string())
                 pbar = TQDM(enumerate(self.train_loader), total=nb)
             self.tloss = None
+            self.total_batch = nb
             for i, batch in pbar:
+                self.batch_i = i
                 self.run_callbacks("on_train_batch_start")
                 # Warmup
                 ni = i + nb * epoch
@@ -454,23 +456,6 @@ class BaseTrainer:
                             batch["img"].shape[-1],  # imgsz, i.e 640
                         )
                     )
-                    ############################################################
-                    from utils.sse import sse_log
-                    import json
-                    log = {
-                        "epoch": f"{epoch + 1}/{self.epochs}",
-                        "batch size": batch["img"].shape[0],
-                        "image size": batch["img"].shape[-1],
-                        "GPU memory util": f"{self._get_memory():.3g}G",
-                        "loss": self.loss.item(),
-                    }
-                    sse_log(progress=epoch, log=log)
-                    # print(self.args)
-                    with open(f'{self.args.save_dir}/log.txt', 'a', encoding='utf-8') as f:
-                        json_str = json.dumps(log, ensure_ascii=False, default=lambda obj: obj.item() if isinstance(obj, np.generic) else obj)
-                        f.write(json_str)
-                        f.write('\n')
-                    ############################################################
                     self.run_callbacks("on_batch_end")
                     if self.args.plots and ni in self.plot_idx:
                         self.plot_training_samples(batch, ni)
@@ -504,7 +489,7 @@ class BaseTrainer:
                 if self.args.save or final_epoch:
                     self.save_model()
                     self.run_callbacks("on_model_save")
-
+                    
             # Scheduler
             t = time.time()
             self.epoch_time = t - self.epoch_time_start
@@ -515,6 +500,7 @@ class BaseTrainer:
                 self._setup_scheduler()
                 self.scheduler.last_epoch = self.epoch  # do not move
                 self.stop |= epoch >= self.epochs  # stop if exceeded epochs
+            
             self.run_callbacks("on_fit_epoch_end")
             self._clear_memory(0.5)  # clear if memory utilization > 50%
 

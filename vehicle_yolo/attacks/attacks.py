@@ -105,8 +105,7 @@ class attacks:
         os.makedirs(adv_label_flod, exist_ok=True)
         adv_label_file = f'{adv_label_flod}/{ori_label_name}'
         os.system(f"cp {ori_label_file} {adv_label_file}")
-        
-        
+
 
     def classify_preprocess(self, img):
         """Convert input images to model-compatible tensor format with appropriate normalization."""
