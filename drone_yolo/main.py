@@ -21,23 +21,29 @@ def parse_args():
     
     parser.add_argument('--task', type=str, default='detect', choices=['detect', 'classify'], help='task name. detect for kitti, bdd100k, ua-detrac, special_vehicle, dawn, flir_adas')
     
-    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['pgd', 'fgsm', 'bim', 'deepfool', 'cw'], help='attack method')
+    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool'], help='attack method')
     parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
     
     parser.add_argument('--epochs', type=int, default=1, help='epochs')
     parser.add_argument('--batch', type=int, default=16, help='batch size')
-    # parser.add_argument('--device', type=int, default=0, help='which gpu for cuda')
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--selected_samples', type=int, default=10, help='the number of generated adversarial sample for attack method')
-    parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method')
-    parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method')
-    parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method')
+    parser.add_argument('--selected_samples', type=int, default=20, help='the number of generated adversarial sample for attack method')
+    
+    parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method and defend medthod')
+    parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
+    parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method and defend medthod')
+    
     parser.add_argument('--random_start', type=bool, default=False, help='initial random start for attack method')
-    parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
     parser.add_argument('--loss_function', type=str, default='cross_entropy', choices=['cross_entropy', 'mse', 'l1', 'binary_cross_entropy'], help='loss function for attack method')
     parser.add_argument('--optimization_method', type=str, default='adam', choices=['adam', 'sgd'], help='optimization for attack method')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
+    
+    parser.add_argument('--scaling_factor', type=float, default=0.9, help='scaling factor (0, 1) for defend method')
+    parser.add_argument('--interpolate_method', type=str, default='bilinear', choices=['bilinear', 'nearest'], help='interpolate method for defend method')
+    parser.add_argument('--image_quality', type=int, default=90, help='the image quality for defend method, on a scale from 1 (worst) to 95 (best). Values above 95 should be avoided.')
+    parser.add_argument('--filter_kernel_size', type=int, default=3, help='filter kernel size for defend method.')
     
     args = parser.parse_args()
     args_dict = vars(args)

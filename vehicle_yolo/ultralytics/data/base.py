@@ -157,7 +157,7 @@ class BaseDataset(Dataset):
                 from defends.ipeg_compression import JpegCompression
                 self.defend = JpegCompression(
                                     clip_values=(0, 255),
-                                    quality=50,
+                                    quality=hyp.image_quality,
                                     channels_first=False,
                                     apply_fit=True,
                                     apply_predict=True,
@@ -166,18 +166,18 @@ class BaseDataset(Dataset):
             elif self.defend_method == 'scale':
                 from defends.jpeg_scale import JpegScale
                 self.defend = JpegScale(
-                                    scale=0.9,
-                                    interp="bilinear"
+                                    scale=hyp.scaling_factor,
+                                    interp=hyp.interpolate_method
                                 )
             elif self.defend_method == 'neural_cleanse':
                 from defends.neural_cleanse import NeuralCleanse
-                self.defend = NeuralCleanse(kernel_size=3)
+                self.defend = NeuralCleanse(kernel_size=hyp.filter_kernel_size)
             elif self.defend_method == 'pgd_purifier':
                 from defends.pgd_purifier import PGDPurifier
-                self.defend = PGDPurifier(steps=10, alpha=1.0, epsilon=8.0)
+                self.defend = PGDPurifier(steps=hyp.max_iterations, alpha=hyp.step_size, epsilon=hyp.epsilon)
             elif self.defend_method == 'fgsm_denoise':
                 from defends.fgsm_denoise import FGSMDenoise
-                self.defend = FGSMDenoise(epsilon=8.0)
+                self.defend = FGSMDenoise(epsilon=hyp.epsilon)
             else:
                 raise ValueError('Invalid defend method!')
         
