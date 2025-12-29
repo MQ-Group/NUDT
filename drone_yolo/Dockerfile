@@ -13,4 +13,6 @@ RUN pip uninstall -y opencv-python && \
 
 COPY . ./
 
+ENV PIP_ROOT_USER_ACTION=ignore
+
 CMD ["python", "main.py"]
