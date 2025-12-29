@@ -29,7 +29,7 @@ def parse_args():
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--selected_samples', type=int, default=20, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
     
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
@@ -141,6 +141,18 @@ def yolo_cfg(args):
     elif args.process == 'sample':
         # dont need modify cfg
         pass
+    
+    
+    cfg.epsilon = args.epsilon
+    cfg.step_size = args.step_size
+    cfg.max_iterations = args.max_iterations
+    cfg.random_start = args.random_start
+    cfg.loss_function = args.loss_function
+    cfg.optimization_method = args.optimization_method
+    cfg.scaling_factor = args.scaling_factor
+    cfg.interpolate_method = args.interpolate_method
+    cfg.image_quality = args.image_quality
+    cfg.filter_kernel_size = args.filter_kernel_size
     
     # print(cfg)
     cfg = dict(cfg)

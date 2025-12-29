@@ -174,7 +174,11 @@ class BaseDataset(Dataset):
                 self.defend = NeuralCleanse(kernel_size=hyp.filter_kernel_size)
             elif self.defend_method == 'pgd_purifier':
                 from defends.pgd_purifier import PGDPurifier
-                self.defend = PGDPurifier(steps=hyp.max_iterations, alpha=hyp.step_size, epsilon=hyp.epsilon)
+                self.defend = PGDPurifier(
+                                        steps=hyp.max_iterations, 
+                                        alpha=hyp.step_size, 
+                                        epsilon=hyp.epsilon
+                                    )
             elif self.defend_method == 'fgsm_denoise':
                 from defends.fgsm_denoise import FGSMDenoise
                 self.defend = FGSMDenoise(epsilon=hyp.epsilon)

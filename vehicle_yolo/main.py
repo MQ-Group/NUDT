@@ -31,13 +31,20 @@ def parse_args():
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
     parser.add_argument('--selected_samples', type=int, default=20, help='the number of generated adversarial sample for attack method')
-    parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method')
-    parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method')
-    parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method')
+    
+    parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method and defend medthod')
+    parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
+    parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method and defend medthod')
+    
     parser.add_argument('--random_start', type=bool, default=False, help='initial random start for attack method')
-    parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
     parser.add_argument('--loss_function', type=str, default='cross_entropy', choices=['cross_entropy', 'mse', 'l1', 'binary_cross_entropy'], help='loss function for attack method')
     parser.add_argument('--optimization_method', type=str, default='adam', choices=['adam', 'sgd'], help='optimization for attack method')
+    parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
+    
+    parser.add_argument('--scaling_factor', type=float, default=0.9, help='scaling factor (0, 1) for defend method')
+    parser.add_argument('--interpolate_method', type=str, default='bilinear', choices=['bilinear', 'nearest'], help='interpolate method for defend method')
+    parser.add_argument('--image_quality', type=int, default=90, help='the image quality for defend method, on a scale from 1 (worst) to 95 (best). Values above 95 should be avoided.')
+    parser.add_argument('--filter_kernel_size', type=int, default=3, help='filter kernel size for defend method.')
     
     args = parser.parse_args()
     args_dict = vars(args)
@@ -135,6 +142,18 @@ def yolo_cfg(args):
     elif args.process == 'sample':
         # dont need modify cfg
         pass
+    
+    
+    cfg.epsilon = args.epsilon
+    cfg.step_size = args.step_size
+    cfg.max_iterations = args.max_iterations
+    cfg.random_start = args.random_start
+    cfg.loss_function = args.loss_function
+    cfg.optimization_method = args.optimization_method
+    cfg.scaling_factor = args.scaling_factor
+    cfg.interpolate_method = args.interpolate_method
+    cfg.image_quality = args.image_quality
+    cfg.filter_kernel_size = args.filter_kernel_size
     
     # print(cfg)
     cfg = dict(cfg)

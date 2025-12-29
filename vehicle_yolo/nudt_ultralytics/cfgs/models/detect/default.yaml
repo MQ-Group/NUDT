@@ -130,6 +130,17 @@ cfg: # (str, optional) path to a config.yaml that overrides defaults
 # Tracker settings ------------------------------------------------------------------------------------------------------
 tracker: botsort.yaml # (str) tracker config file: botsort.yaml or bytetrack.yaml
 
-process: test #
-attack_method: fsgm #
-defend_method: scale #
+process: train
+attack_method: fsgm
+defend_method: scale
+
+epsilon: 0.0313
+step_size: 0.0078
+max_iterations: 50
+random_start: False
+loss_function: cross_entropy
+optimization_method: adam
+scaling_factor: 0.9
+interpolate_method: bilinear
+image_quality: 90
+filter_kernel_size: 3
