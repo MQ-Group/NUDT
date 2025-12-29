@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='./input', help='input path')
     parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='defend', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
+    parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
     # parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
     # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
     # parser.add_argument('--class_number', type=int, default=8, choices=[8, 10, 4, 1, 1000], help='number of class. 8 for kitti, 10 for bdd100k, 4 for ua-detrac, 5 for special_vehicle, 1 for dawn, 1 for flir_adas')
@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--device', type=str, default='gpu', choices=['cpu', 'gpu'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--selected_samples', type=int, default=10, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--selected_samples', type=int, default=20, help='the number of generated adversarial sample for attack method')
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method')
     parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method')
@@ -61,13 +61,13 @@ def type_switch(environ_value, value):
         return environ_value
     
 def yolo_cfg(args):
-    model_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.yaml'))[0]
+    model_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.yaml'))[0]
     # print(model_yaml)
     model_name = os.path.splitext(os.path.basename(model_yaml))[0]
     # print(model_name)
     args.model_yaml = model_yaml
     args.model_name = model_name
-    data_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*'), '*.yaml'))[0]
+    data_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.yaml'))[0]
     # print(data_yaml)
     data_name = os.path.splitext(os.path.basename(data_yaml))[0]
     # print(data_name)
@@ -78,7 +78,7 @@ def yolo_cfg(args):
     data_cfg = load_yaml(data_yaml)
     
     model_cfg['nc'] = data_cfg['nc']
-    data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*'), '*'))[0]
+    data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
     # print(data_path)
     data_cfg['path'] = data_path
     
@@ -104,20 +104,20 @@ def yolo_cfg(args):
     if args.process == 'adv':
         cfg.mode = 'predict'
         cfg.batch = 1
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
         cfg.device = args.device
         cfg.workers = args.workers
     elif args.process == 'attack':
         cfg.mode = 'validate'
         cfg.batch = args.batch
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
         cfg.device = args.device if args.device == 'cpu' else -1
         cfg.workers = args.workers
         cfg.attack_method = args.attack_method
     elif args.process == 'defend':
         cfg.mode = 'predict'
         cfg.batch = args.batch
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
         cfg.defend_method = args.defend_method
         cfg.workers = args.workers
     elif args.process == 'train':
@@ -129,7 +129,7 @@ def yolo_cfg(args):
     elif args.process == 'test':
         cfg.mode = 'validate'
         cfg.batch = args.batch
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*'), '*.pt'))[0]
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
         cfg.device = args.device if args.device == 'cpu' else -1
         cfg.workers = args.workers
     elif args.process == 'sample':
@@ -140,7 +140,6 @@ def yolo_cfg(args):
     cfg = dict(cfg)
     args.cfg_yaml = './cfgs/default.yaml'
     save_yaml(cfg, args.cfg_yaml)
-    
     return args
 
 def main(args):

@@ -77,11 +77,6 @@ def on_train_batch_end(trainer):
 
 def on_train_epoch_end(trainer):
     """Called at the end of each training epoch."""
-    pass
-
-
-def on_fit_epoch_end(trainer):
-    """Called at the end of each fit epoch (train + val)."""
     ############################################################
     event = "train"
     data = {
@@ -108,6 +103,11 @@ def on_fit_epoch_end(trainer):
     ############################################################
 
 
+def on_fit_epoch_end(trainer):
+    """Called at the end of each fit epoch (train + val)."""
+    pass
+
+
 def on_model_save(trainer):
     """Called when the model is saved."""
     event = "train"
@@ -131,8 +131,8 @@ def on_train_end(trainer):
             "results image": f"{trainer.save_dir}/results.png",
             "results csv": f"{trainer.save_dir}/results.csv",
             "display images": [f"{trainer.save_dir}/train_batch{i}.png" for i in trainer.plot_idx],
-            "weight": trainer.wdir,
-            "summary": trainer.metrics
+            "weight": str(trainer.wdir),
+            "summary": trainer.metrics,
         }
     }
     sse_print(event, data)
@@ -159,6 +159,8 @@ def teardown(trainer):
 
 def on_val_start(validator):
     """Called when the validation starts."""
+    # print('-'*100)
+    # print(validator.args)
     if validator.args.process in ['test', 'attack', 'defend']:
         event = "task_initialized"
         data = {

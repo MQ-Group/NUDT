@@ -27,10 +27,10 @@ This module implements the JPEG compression defence `JpegCompression`.
 
 
 from io import BytesIO
-
+import torch
 import numpy as np
-from tqdm.auto import tqdm
-
+from typing import Tuple, Union
+from PIL import Image
 
 class JpegCompression():
     """
@@ -71,46 +71,75 @@ class JpegCompression():
         :param verbose: Show progress bars.
         """
 
-        super().__init__(is_fitted=True, apply_fit=apply_fit, apply_predict=apply_predict)
         self.quality = quality
         self.channels_first = channels_first
         self.clip_values = clip_values
         self.verbose = verbose
         self._check_params()
 
-    def _compress(self, x: np.ndarray, mode: str) -> np.ndarray:
+    def _compress(self, x: torch.Tensor, mode: str) -> torch.Tensor:
         """
-        Apply JPEG compression to image input.
+        Apply JPEG compression to tensor input.
         """
-        from PIL import Image
+        # Convert tensor to numpy array for PIL processing
+        if x.is_cuda:
+            x_np = x.cpu().numpy()
+        else:
+            x_np = x.numpy()
 
         tmp_jpeg = BytesIO()
-        x_image = Image.fromarray(x, mode=mode)
+        x_image = Image.fromarray(x_np, mode=mode)
         x_image.save(tmp_jpeg, format="jpeg", quality=self.quality)
-        x_jpeg = np.array(Image.open(tmp_jpeg))
+
+        # Load compressed image and convert back to tensor
+        x_jpeg_np = np.array(Image.open(tmp_jpeg))
         tmp_jpeg.close()
+
+        # Convert back to tensor
+        x_jpeg = torch.from_numpy(x_jpeg_np)
+
+        # Move tensor to original device if it was on GPU
+        if x.is_cuda:
+            x_jpeg = x_jpeg.to(x.device)
+
         return x_jpeg
 
-    def __call__(self, x: np.ndarray, y: np.ndarray | None = None):
+    def __call__(self, x: torch.Tensor, y = None):
         """
-        Apply JPEG compression to sample `x`.
+        Apply JPEG compression to tensor sample `x`.
 
         For input images or videos with 3 color channels the compression is applied in mode `RGB`
         (3x8-bit pixels, true color), for all other numbers of channels the compression is applied for each channel with
         mode `L` (8-bit pixels, black and white).
 
         :param x: Sample to compress with shape of `NCHW`, `NHWC`, `NCFHW` or `NFHWC`. `x` values are expected to be in
-                  the data range [0, 1] or [0, 255].
+                the data range [0, 1] or [0, 255].
         :param y: Labels of the sample `x`. This function does not affect them in any way.
-        :return: compressed sample.
+        :return: compressed sample as tensor.
         """
-        x_ndim = x.ndim
+        # Store original device
+        original_device = x.device
+        
+        # Check if x is a tensor
+        if not isinstance(x, torch.Tensor):
+            raise TypeError(f"Expected x to be torch.Tensor, but got {type(x)}")
+        
+        # Store original dtype
+        original_dtype = x.dtype
+        
+        # Convert tensor to numpy for processing
+        if x.is_cuda:
+            x_np = x.cpu().numpy()
+        else:
+            x_np = x.numpy()
+        
+        x_ndim = x_np.ndim
         if x_ndim not in [4, 5]:
             raise ValueError(
                 "Unrecognized input dimension. JPEG compression can only be applied to image and video data."
             )
 
-        if x.min() < 0.0:
+        if x_np.min() < 0.0:
             raise ValueError(
                 "Negative values in input `x` detected. The JPEG compression defence requires unnormalized input."
             )
@@ -118,49 +147,68 @@ class JpegCompression():
         # Swap channel index
         if self.channels_first and x_ndim == 4:
             # image shape NCHW to NHWC
-            x = np.transpose(x, (0, 2, 3, 1))
+            x_np = np.transpose(x_np, (0, 2, 3, 1))
         elif self.channels_first and x_ndim == 5:
             # video shape NCFHW to NFHWC
-            x = np.transpose(x, (0, 2, 3, 4, 1))
+            x_np = np.transpose(x_np, (0, 2, 3, 4, 1))
 
         # insert temporal dimension to image data
         if x_ndim == 4:
-            x = np.expand_dims(x, axis=1)
+            x_np = np.expand_dims(x_np, axis=1)
 
         # Convert into uint8
         if self.clip_values[1] == 1.0:
-            x = x * 255
-        x = x.astype("uint8")
+            x_np = x_np * 255
+        x_np = x_np.astype("uint8")
 
+        # Convert to tensor for _compress method
+        x_tensor = torch.from_numpy(x_np)
+        if original_device.type == 'cuda':
+            x_tensor = x_tensor.to(original_device)
+        
         # Compress one image at a time
-        x_jpeg = x.copy()
-        # for idx in tqdm(np.ndindex(x.shape[:2]), desc="JPEG compression", disable=not self.verbose):  # type: ignore
-        for idx in np.ndindex(x.shape[:2]):  # type: ignore
-            if x.shape[-1] == 3:
-                x_jpeg[idx] = self._compress(x[idx], mode="RGB")
+        x_jpeg = x_tensor.clone()
+        
+        for idx in np.ndindex(x_np.shape[:2]):
+            if x_np.shape[-1] == 3:
+                x_jpeg[idx] = self._compress(x_tensor[idx], mode="RGB")
             else:
-                for i_channel in range(x.shape[-1]):
-                    x_channel = x[idx[0], idx[1], ..., i_channel]
-                    x_channel = self._compress(x_channel, mode="L")
-                    x_jpeg[idx[0], idx[1], :, :, i_channel] = x_channel
+                for i_channel in range(x_np.shape[-1]):
+                    x_channel = x_tensor[idx[0], idx[1], ..., i_channel]
+                    x_channel_compressed = self._compress(x_channel, mode="L")
+                    x_jpeg[idx[0], idx[1], :, :, i_channel] = x_channel_compressed
+
+        # Convert back to numpy for remaining operations
+        if x_jpeg.is_cuda:
+            x_jpeg_np = x_jpeg.cpu().numpy()
+        else:
+            x_jpeg_np = x_jpeg.numpy()
 
         # Convert to ART dtype
         if self.clip_values[1] == 1.0:
-            x_jpeg = x_jpeg / 255.0
-        x_jpeg = x_jpeg.astype(np.float32)
+            x_jpeg_np = x_jpeg_np / 255.0
+        x_jpeg_np = x_jpeg_np.astype(np.float32)
 
         # remove temporal dimension for image data
         if x_ndim == 4:
-            x_jpeg = np.squeeze(x_jpeg, axis=1)
+            x_jpeg_np = np.squeeze(x_jpeg_np, axis=1)
 
         # Swap channel index
-        if self.channels_first and x_jpeg.ndim == 4:
+        if self.channels_first and x_jpeg_np.ndim == 4:
             # image shape NHWC to NCHW
-            x_jpeg = np.transpose(x_jpeg, (0, 3, 1, 2))
+            x_jpeg_np = np.transpose(x_jpeg_np, (0, 3, 1, 2))
         elif self.channels_first and x_ndim == 5:
             # video shape NFHWC to NCFHW
-            x_jpeg = np.transpose(x_jpeg, (0, 4, 1, 2, 3))
-        return x_jpeg, y
+            x_jpeg_np = np.transpose(x_jpeg_np, (0, 4, 1, 2, 3))
+        
+        # Convert back to tensor
+        x_jpeg_tensor = torch.from_numpy(x_jpeg_np).to(original_device)
+        
+        # Convert to original dtype if needed
+        if original_dtype != torch.float32:
+            x_jpeg_tensor = x_jpeg_tensor.to(original_dtype)
+        
+        return x_jpeg_tensor, y
 
     def _check_params(self) -> None:
         if not isinstance(self.quality, int) or self.quality <= 0 or self.quality > 100:

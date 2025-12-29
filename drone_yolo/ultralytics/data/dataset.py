@@ -797,7 +797,7 @@ class ClassificationDataset:
         )
         
         ##########################defend################################################
-        self.defend_en = True if args.attack_or_defend == 'defend' else False
+        self.defend_en = True if args.process == 'defend' else False
         self.defend_method = args.defend_method
         
         if self.defend_en:
@@ -1074,5 +1074,4 @@ class ClassificationDataset_nudt:
             x["msgs"] = msgs  # warnings
             save_dataset_cache_file(self.prefix, path, x, DATASET_CACHE_VERSION)
             return samples
-
 

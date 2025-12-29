@@ -1,9 +1,7 @@
-path: yolo_drone_detection
+path: ./input/data/yolo_drone_detection/yolo_drone_detection/
 train: images/train
 val: images/val
 test: null
-
 nc: 1
-
 names:
   0: drone

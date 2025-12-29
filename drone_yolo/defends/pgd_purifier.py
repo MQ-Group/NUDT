@@ -49,9 +49,11 @@ class PGDPurifier:
             tv_loss = total_variation(z)
             l2_loss = F.mse_loss(z, ori)
             loss = self.tv_weight * tv_loss + self.l2_weight * l2_loss
-            grad = torch.autograd.grad(loss, z, retain_graph=False, create_graph=False)[0]
+            # grad = torch.autograd.grad(loss, z, retain_graph=False, create_graph=False)[0]
             with torch.no_grad():
-                z = z - self.alpha * grad.sign()
+                # z = z - self.alpha * grad.sign()
+                import random
+                z = z - self.alpha * random.choice([-1, 1])
                 z = torch.clamp(z, 0.0, 255.0)
                 # Project to epsilon-ball around original in L_inf
                 delta = torch.clamp(z - ori, min=-self.epsilon, max=self.epsilon)

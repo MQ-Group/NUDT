@@ -106,4 +106,4 @@ cfg: null
 tracker: botsort.yaml
 process: defend
 attack_method: fsgm
-defend_method: compression
+defend_method: pgd_purifier

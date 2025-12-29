@@ -10,26 +10,27 @@ from nudt_ultralytics.main import main as yolo
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--input_path', type=str, default='../input', help='input path')
-    parser.add_argument('--output_path', type=str, default='../output', help='output path')
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input_path', type=str, default='./input', help='input path')
+    parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack', 'defend', 'train'], help='process name')
-    parser.add_argument('--model', type=str, default='drone_yolo', choices=['drone_yolo'], help='model name')
-    parser.add_argument('--data', type=str, default='yolo_drone_detection', choices=['yolo_drone_detection'], help='data name')
-    parser.add_argument('--class_number', type=int, default=1, choices=[1, 1000], help='number of class. 1 for yolo_drone_detection, 1000 for imagenet10')
+    parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
+    # parser.add_argument('--model', type=str, default='drone_yolo', choices=['drone_yolo'], help='model name')
+    # parser.add_argument('--data', type=str, default='yolo_drone_detection', choices=['yolo_drone_detection'], help='data name')
+    # parser.add_argument('--class_number', type=int, default=1, choices=[1, 1000], help='number of class. 1 for yolo_drone_detection, 1000 for imagenet10')
     
-    parser.add_argument('--attack_method', type=str, default='pgd', choices=['cw', 'deepfool', 'bim', 'fgsm', 'pgd'], help='attack method')
-    parser.add_argument('--defend_method', type=str, default='fgsm_denoise', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
+    parser.add_argument('--task', type=str, default='detect', choices=['detect', 'classify'], help='task name. detect for kitti, bdd100k, ua-detrac, special_vehicle, dawn, flir_adas')
     
-    parser.add_argument('--cfg_path', type=str, default='./cfgs', help='cfg path')
+    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['pgd', 'fgsm', 'bim', 'deepfool', 'cw'], help='attack method')
+    parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
     
-    parser.add_argument('--epochs', type=int, default=100, help='epochs')
-    parser.add_argument('--batch', type=int, default=1, help='batch size')
+    parser.add_argument('--epochs', type=int, default=1, help='epochs')
+    parser.add_argument('--batch', type=int, default=16, help='batch size')
     # parser.add_argument('--device', type=int, default=0, help='which gpu for cuda')
-    parser.add_argument('--device', type=str, default='cpu', help='which gpu for cuda')
+    parser.add_argument('--device', type=str, default='gpu', choices=['cpu', 'gpu'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--selected_samples', type=int, default=0, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--selected_samples', type=int, default=10, help='the number of generated adversarial sample for attack method')
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method')
     parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method')
@@ -42,74 +43,102 @@ def parse_args():
     args_dict = vars(args)
     args_dict_environ = {}
     for key, value in args_dict.items():
-        args_dict_environ[key] = type_switch(os.getenv(key.upper(), value), value)
+        if key in ['input_path', 'output_path']:
+            args_dict_environ[key] = type_switch(os.getenv(key.upper(), value), value)
+        else:
+            args_dict_environ[key] = type_switch(os.getenv(key, value), value)
     args_easydict = EasyDict(args_dict_environ)
     return args_easydict
-
-
+    
 def type_switch(environ_value, value):
-    if isinstance(value, int):
+    if isinstance(value, bool):
+        return bool(environ_value)
+    elif isinstance(value, int):
         return int(environ_value)
     elif isinstance(value, float):
         return float(environ_value)
-    elif isinstance(value, bool):
-        return bool(environ_value)
     elif isinstance(value, str):
         return environ_value
     
 def yolo_cfg(args):
+    model_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.yaml'))[0]
+    # print(model_yaml)
+    model_name = os.path.splitext(os.path.basename(model_yaml))[0]
+    # print(model_name)
+    args.model_yaml = model_yaml
+    args.model_name = model_name
+    data_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.yaml'))[0]
+    # print(data_yaml)
+    data_name = os.path.splitext(os.path.basename(data_yaml))[0]
+    # print(data_name)
+    args.data_yaml = data_yaml
+    args.data_name = data_name
     
-    model_yaml = f'./nudt_ultralytics/cfgs/models/{args.model}.yaml'
     model_cfg = load_yaml(model_yaml)
-    model_cfg['nc'] = args.class_number
-    model_yaml = f'{args.cfg_path}/{args.model}.yaml'
-    save_yaml(model_cfg, model_yaml)
-    
-    data_yaml = f'./nudt_ultralytics/cfgs/datasets/{args.data}.yaml'
     data_cfg = load_yaml(data_yaml)
-    dataset_path = os.path.join(f'{args.input_path}/data', args.data)
-    # dataset_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
-    data_cfg['path'] = dataset_path
-    data_yaml = f'{args.cfg_path}/{args.data}.yaml'
+    
+    model_cfg['nc'] = data_cfg['nc']
+    data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
+    # print(data_path)
+    data_cfg['path'] = data_path
+    
+    args.nc = data_cfg['nc']
+    args.data_path = data_path
+    
+    model_yaml = './cfgs/model.yaml'
+    save_yaml(model_cfg, model_yaml)
+    data_yaml = './cfgs/data.yaml'
     save_yaml(data_cfg, data_yaml)
     
     cfg_yaml = f'./nudt_ultralytics/cfgs/models/default.yaml'
     cfg = load_yaml(cfg_yaml)
     cfg = EasyDict(cfg)
-    cfg.model = f'{args.cfg_path}/{args.model}.yaml'
-    cfg.data = data_yaml
+    cfg.process = args.process
+    cfg.task = args.task
+    cfg.model = model_yaml
+    if args.task == 'classify':
+        cfg.data = data_cfg['path']
+    else:
+        cfg.data = data_yaml
     cfg.save_dir = args.output_path
-    cfg.project = args.model
-    cfg.name = args.process
     if args.process == 'adv':
         cfg.mode = 'predict'
         cfg.batch = 1
-        cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        # cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
         cfg.device = args.device
+        cfg.workers = args.workers
     elif args.process == 'attack':
         cfg.mode = 'validate'
-        cfg.batch = 1
-        # cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
-        cfg.device = args.device
-        cfg.attack_or_defend = 'attack'
+        cfg.batch = args.batch
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
+        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.workers = args.workers
         cfg.attack_method = args.attack_method
     elif args.process == 'defend':
         cfg.mode = 'predict'
-        # cfg.batch = 1
-        # cfg.pretrained = f'{args.input_path}/model/{args.model}.pt' # 模型名称与模型权重文件名称绑定成一样
-        cfg.pretrained = glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0] # input_path/model目录下有且只有一个权重文件
-        cfg.attack_or_defend = 'defend'
+        cfg.batch = args.batch
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
         cfg.defend_method = args.defend_method
+        cfg.workers = args.workers
     elif args.process == 'train':
         cfg.mode = 'train'
         cfg.epochs = args.epochs
         cfg.batch = args.batch
-        cfg.device = args.device
+        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.workers = args.workers
+    elif args.process == 'test':
+        cfg.mode = 'validate'
+        cfg.batch = args.batch
+        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
+        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.workers = args.workers
+    elif args.process == 'sample':
+        # dont need modify cfg
+        pass
     
+    # print(cfg)
     cfg = dict(cfg)
-    args.cfg_yaml = f'{args.cfg_path}/default.yaml'
+    args.cfg_yaml = './cfgs/default.yaml'
     save_yaml(cfg, args.cfg_yaml)
     
     return args
@@ -126,9 +155,5 @@ if __name__ == '__main__':
     # sse_working_path_created(args.working_path)
     # sse_source_unzip_completed(args.dataset_path, args.working_path)
     main(args)
-    
-    
-    
-    
     
     

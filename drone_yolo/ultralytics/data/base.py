@@ -149,7 +149,7 @@ class BaseDataset(Dataset):
         self.transforms = self.build_transforms(hyp=hyp)
         
         ##########################defend################################################
-        self.defend_en = True if hyp.attack_or_defend == 'defend' else False
+        self.defend_en = True if hyp.process == 'defend' else False
         if self.defend_en:
             self.defend_method = hyp.defend_method
             # print(self.defend_method)

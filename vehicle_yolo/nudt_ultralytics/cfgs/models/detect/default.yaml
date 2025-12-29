@@ -132,4 +132,4 @@ tracker: botsort.yaml # (str) tracker config file: botsort.yaml or bytetrack.yam
 
 process: test #
 attack_method: fsgm #
-defend_method: fsgm #
+defend_method: scale #

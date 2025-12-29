@@ -93,7 +93,7 @@ def sse_input_path_validated(args):
                     data = {
                         "status": "success",
                         "message": "Input data file is valid and complete.",
-                        "file_name": glob.glob(os.path.join(f'{args.input_path}/data', '*'))[0]
+                        "file_name": glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
                     }
                     sse_print(event, data)
                 else:
@@ -112,7 +112,7 @@ def sse_input_path_validated(args):
                     data = {
                         "status": "success",
                         "message": "Input model file is valid and complete.",
-                        "file_name": glob.glob(os.path.join(f'{args.input_path}/model', '*'))[0]
+                        "file_name": glob.glob(os.path.join(f'{args.input_path}/model', '*/'))[0]
                     }
                     sse_print(event, data)
                 else:

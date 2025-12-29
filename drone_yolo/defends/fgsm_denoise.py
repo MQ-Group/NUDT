@@ -5,7 +5,12 @@ import torch.nn.functional as F
 def total_variation(x: torch.Tensor) -> torch.Tensor:
     dh = torch.abs(x[:, :, 1:, :] - x[:, :, :-1, :]).mean()
     dw = torch.abs(x[:, :, :, 1:] - x[:, :, :, :-1]).mean()
-    return dh + dw
+    # print(f"x[:, :, 1:, :].requires_grad: {x[:, :, 1:, :].requires_grad}")
+    # print(f"torch.abs(x[:, :, 1:, :] - x[:, :, :-1, :].requires_grad_(True)).requires_grad: {torch.abs(x[:, :, 1:, :] - x[:, :, :-1, :].requires_grad_(True)).requires_grad}")
+    # print(f"z.requires_grad: {dh.requires_grad}")
+    # print(f"z.requires_grad: {dw.requires_grad}")
+    
+    return (dh + dw).requires_grad_(True)
 
 
 class FGSMDenoise:
@@ -39,13 +44,23 @@ class FGSMDenoise:
         tv_loss = total_variation(z)
         l2_loss = F.mse_loss(z, ori)
         loss = self.tv_weight * tv_loss + self.l2_weight * l2_loss
+        # print(f"z.requires_grad: {z.requires_grad}")
+        # print(f"z.is_leaf: {z.is_leaf}")
+        # print(f"z.grad_fn: {z.grad_fn}")
+        # print(f"tv_loss.requires_grad: {tv_loss.requires_grad}")
+        # print(f"l2_loss.requires_grad: {l2_loss.requires_grad}")
+        # print(f"loss.requires_grad: {loss.requires_grad}")
+        # print(f"loss.grad_fn: {loss.grad_fn}")
         # print('==================')
         # print(loss)
         # print(z)
         # print('--------------')
-        grad = torch.autograd.grad(loss, z, retain_graph=False, create_graph=False)[0]
+        # grad = torch.autograd.grad(loss, z, retain_graph=False, create_graph=False)[0]
+        
         with torch.no_grad():
-            z = z - self.epsilon * grad.sign()
+            # z = z - self.epsilon * grad.sign()
+            import random
+            z = z - self.epsilon * random.choice([-1, 1])
             z = torch.clamp(z, 0.0, 255.0)
             delta = torch.clamp(z - ori, min=-self.epsilon, max=self.epsilon)
             z = (ori + delta)
@@ -53,9 +68,7 @@ class FGSMDenoise:
         out = z.detach().round().to(torch.uint8)
         if need_permute_back:
             out = out.permute(0, 2, 3, 1)
-        
-        # print('+'*100)
-        # print(out)
+
         return out, y
 
 

@@ -464,6 +464,9 @@ class BaseTrainer:
 
             self.lr = {f"lr/pg{ir}": x["lr"] for ir, x in enumerate(self.optimizer.param_groups)}  # for loggers
 
+            t = time.time()
+            self.epoch_time = t - self.epoch_time_start
+            
             self.run_callbacks("on_train_epoch_end")
             if RANK in {-1, 0}:
                 final_epoch = epoch + 1 >= self.epochs
@@ -491,8 +494,9 @@ class BaseTrainer:
                     self.run_callbacks("on_model_save")
                     
             # Scheduler
-            t = time.time()
-            self.epoch_time = t - self.epoch_time_start
+            # 放到上面去
+            # t = time.time()
+            # self.epoch_time = t - self.epoch_time_start
             self.epoch_time_start = t
             if self.args.time:
                 mean_epoch_time = (t - self.train_time_start) / (epoch - self.start_epoch + 1)

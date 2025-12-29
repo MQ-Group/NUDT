@@ -10,7 +10,7 @@ os.environ['YOLO_CONFIG_DIR'] = YOLO_CONFIG_DIR
 import glob
 import yaml
 from easydict import EasyDict
-from ultralytics import YOLO
+
 
 from nudt_ultralytics.callbacks.callbacks import callbacks_dict
 
@@ -21,9 +21,10 @@ def load_yaml(load_path):
     return config
     
 def main(args):
+    from ultralytics import YOLO
+    
     cfg = load_yaml(args.cfg_yaml)
     cfg = EasyDict(cfg)
-    
     
     # if cfg.mode == 'train':
     #     if cfg.pretrained is None:
@@ -118,7 +119,7 @@ def main(args):
         from sample.sample import sample_dataset
         sampled_data_path = f'{args.output_path}/sampled_' + args.data_name
         sample_dataset(source_dir=args.data_path, target_dir=sampled_data_path, train_count=args.selected_samples, val_count=args.selected_samples, seed=None)
-        os.system(f"cp {args.data_yaml} {sampled_data_path}")
+        os.system(f"cp {args.data_yaml} {args.output_path}")
         
         from utils.sse import sse_print
         event = "final_result"
