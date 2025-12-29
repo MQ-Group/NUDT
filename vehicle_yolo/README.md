@@ -53,19 +53,47 @@ cd vehicle_yolo
 docker build -t vehicle_yolo:latest .
 ```
 
-
-## 输入目录结构
+### 输入输出目录结构
 ```
-input/
-├── model/
-│   └── model_name/                 # 模型目录
-│       └── weight.pt               # 模型权重
-│       └── model_cfg.yaml          # 模型配置文件
-└── data/
-    └── data_name/                  # 数据集目录
-        └── data/                   # 数据集
-        └── data_cfg.yaml           # 数据集配置文件
+docker_inout_dir/
+├── input/
+│   ├── model/
+│   │   └── model_name/                 # 模型目录
+│   │       └── weight.pt               # 模型权重
+│   │           └── model_cfg.yaml          # 模型配置文件
+│   └── data/
+│       └── data_name/                  # 数据集目录
+│           └── data/                   # 数据集
+│           └── data_cfg.yaml           # 数据集配置文件
+├── output/
 ```
 
+### 运行 Docker 镜像
+```bash
+cd docker_inout_dir
 
-
+docker run --rm --gpus all \
+    -v ./input:/project/input:ro \
+    -v ./output:/project/output:rw \
+    -e INPUT_PATH=./input \
+    -e OUTPUT_PATH=./output \
+    -e process=train \
+    -e attack_method=fgsm \
+    -e defend_method=scale \
+    -e epochs=100 \
+    -e batch=16 \
+    -e device=cuda \
+    -e workers=0 \
+    -e selected_samples=64 \
+    -e epsilon=0.0313
+    -e step_size=0.0078
+    -e max_iterations=50
+    -e random_start=False
+    -e loss_function=cross_entropy
+    -e optimization_method=adam
+    -e scaling_factor=0.9
+    -e interpolate_method=bilinear
+    -e image_quality=90
+    -e filter_kernel_size=3
+    vehicle_yolo:latest
+```
