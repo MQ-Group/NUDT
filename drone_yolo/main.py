@@ -27,7 +27,7 @@ def parse_args():
     parser.add_argument('--epochs', type=int, default=1, help='epochs')
     parser.add_argument('--batch', type=int, default=16, help='batch size')
     # parser.add_argument('--device', type=int, default=0, help='which gpu for cuda')
-    parser.add_argument('--device', type=str, default='gpu', choices=['cpu', 'gpu'], help='device')
+    parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
     parser.add_argument('--selected_samples', type=int, default=10, help='the number of generated adversarial sample for attack method')

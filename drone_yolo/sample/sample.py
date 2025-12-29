@@ -47,8 +47,14 @@ def sample_dataset(source_dir, target_dir, train_count, val_count, seed=None):
         dst_img_dir = target_path / 'images' / split
         dst_label_dir = target_path / 'labels' / split
         
+        # 支持的文件格式
+        img_extensions = {'.jpg', '.jpeg', '.png', '.bmp'}
+        
         # 获取所有图片文件
-        image_files = list(src_img_dir.glob('*.png'))
+        image_files = []
+        for ext in img_extensions:
+            image_files.extend(src_img_dir.glob(f'*{ext}'))
+            image_files.extend(src_img_dir.glob(f'*{ext.upper()}'))
         
         if not image_files:
             # print(f"警告: {src_img_dir} 中没有找到图片文件")

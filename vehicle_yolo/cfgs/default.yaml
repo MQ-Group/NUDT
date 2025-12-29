@@ -4,8 +4,8 @@ model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
 imgsz: 640
 epochs: 100
-batch: 16
-device: 0
+batch: 1
+device: cuda
 workers: 0
 pretrained: ./input/model/yolov5/yolov5.pt
 resume: false
@@ -104,6 +104,6 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-process: defend
+process: adv
 attack_method: fsgm
-defend_method: pgd_purifier
+defend_method: scale
