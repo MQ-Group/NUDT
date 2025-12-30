@@ -28,16 +28,15 @@ vehicle_yolo/input/
 vehicle_yolo/output/
 drone_yolo/input/
 drone_yolo/output/
-poisioning/input/
-poisioning/output/
-image-test.py
-test-defend.bash
-test-zhongshan.bash
-sample_attack/
-sample_defense/
-poisioning/
+
 sample_attack/input/
 sample_attack/output/
+
+
+poisioning/input/
+poisioning/output/
+poisioning/
+
 
 # 其他常见大文件扩展
 *.tar

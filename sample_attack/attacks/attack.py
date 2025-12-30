@@ -1,0 +1,181 @@
+import sys
+import os
+import torch
+import torch.nn as nn
+
+sys.path.insert(0, '..')
+import torchattacks
+
+sys.path.insert(0, '..')
+import robustbench
+from robustbench.data import load_cifar10, load_cifar100
+from robustbench.utils import load_model, clean_accuracy
+
+from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
+
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool
+from .utils import imshow, get_pred
+from torchvision import transforms
+
+from utils.sse import sse_print
+
+def attack(args):
+    device = args.device
+    
+    try:
+        # print(args.data_name)
+        if args.data_name == 'cifar10':
+            dataset = BenchmarkDataset.cifar_10
+        elif args.data_name == 'cifar100':
+            dataset = BenchmarkDataset.cifar_100
+        else:
+            raise ValueError('数据集不支持, 仅支持数据集: cifar10, cifar100.')
+        
+        event = "data_load_validated"
+        data = {
+            "status": "success",
+            "message": "数据集加载完毕.",
+            "data name": args.data_name,
+            "data path": args.data_path
+        }
+        sse_print(event, data)
+    except Exception as e:
+        event = "data_load_validated"
+        data = {
+            "status": "failure",
+            "message": f"{e}",
+            "data name": args.data_name,
+            "data path": args.data_path
+        }
+        sse_print(event, data)
+        
+    
+    '''
+    :param model_name: The name used in the model zoo.
+    :param model_dir: The base directory where the models are saved.
+    :param dataset: The dataset on which the model is trained.
+    :param threat_model: The threat model for which the model is trained.
+    :param norm: Deprecated argument that can be used in place of ``threat_model``. If specified, it overrides ``threat_model``
+    '''
+    model = load_model(
+        model_name = args.model_name,
+        model_path = args.model_path,
+        dataset = dataset,
+        threat_model = ThreatModel.Linf, # 默认值
+        norm='Linf'
+        ).to(device)
+    
+    
+    
+    try:
+        # print(args.attack_method)
+        if args.attack_method == 'fgsm':
+            atk = FGSM(model, eps=args.epsilon)
+        elif args.attack_method == 'pgd':
+            atk = PGD(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
+        elif args.attack_method == 'bim':
+            atk = BIM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
+        elif args.attack_method == 'cw':
+            atk = CW(model, c=1, kappa=0, steps=args.max_iterations, lr=args.lr)
+        elif args.attack_method == 'deepfool':
+            atk = DeepFool(model, steps=args.max_iterations, overshoot=0.02)
+        elif args.attack_method == 'GN':
+            atk = DeepFool(model, std=args.std)
+        elif args.attack_method == 'jitter':
+            atk = Jitter(eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
+        else:
+            raise ValueError('不支持的攻击方法.')
+
+        event = "attack"
+        data = {
+            "status": "success",
+            "message": "攻击初始化完成.",
+            "attack method": args.attack_method
+        }
+        sse_print(event, data)
+    except Exception as e:
+        event = "attack"
+        data = {
+            "status": "failure",
+            "message": f"{e}",
+            "attack method": args.attack_method
+        }
+        sse_print(event, data)
+    
+    # print(atk)
+    
+    ori_adv_loader = atk.load(
+        load_path=args.data_path,
+        batch_size=args.batch,
+        shuffle=False,
+        normalize=None,
+        load_predictions=False,
+        load_clean_inputs=True,
+        )
+    adv_images, labels, ori_images = next(iter(ori_adv_loader))
+    # print(adv_images.shape)
+    # print(labels.shape)
+    # print(ori_images.shape)
+    
+    ori_images_flod = f"{args.output_path}/ori_images"
+    adv_images_flod = f"{args.output_path}/adv_images"
+    os.makedirs(ori_images_flod, exist_ok=True)
+    os.makedirs(adv_images_flod, exist_ok=True)
+    
+    
+    total_iamges = adv_images.shape[0]
+    attack_success_count = 0
+    attack_failure_count = 0
+    for i in range(total_iamges):
+        ori_pred_cls = get_pred(model, ori_images[i:i+1], device)
+        adv_pred_cls = get_pred(model, adv_images[i:i+1], device)
+        # print(ori_pred_cls)
+        # print(adv_pred_cls)
+        
+        if ori_pred_cls != adv_pred_cls:
+            attack_result = '成功'
+            attack_success_count += 1
+        else:
+            attack_result = '失败'
+            attack_failure_count += 1
+            
+        ori_img_save_path = f"{ori_images_flod}/ori_img_{i}_pred_cls_{ori_pred_cls.item()}.jpg"
+        adv_img_save_path = f"{adv_images_flod}/adv_img_{i}_pred_cls_{adv_pred_cls.item()}.jpg"
+        
+        to_pil = transforms.ToPILImage()
+        pil_image = to_pil(ori_images[i])
+        pil_image = to_pil(adv_images[i])
+        pil_image.save(ori_img_save_path)
+        pil_image.save(adv_img_save_path)
+        
+        event = "attack"
+        data = {
+            "message": "正在执行攻击...",
+            "progress": int(i/total_iamges*100),
+            "log": f"[{int(i/total_iamges*100)}%] 原始样本: {ori_img_save_path}, 原始样本预测类别: {ori_pred_cls.item()}, 对抗样本: {adv_img_save_path}, 对抗样本预测类别: {ori_pred_cls.item()}, 攻击结果: {attack_result}"
+        }
+        sse_print(event, data)
+    
+    ori_acc = clean_accuracy(model, ori_images.to(device), labels.to(device))
+    adv_acc = clean_accuracy(model, adv_images.to(device), labels.to(device))
+    # print('Acc: %2.2f %%'%(ori_acc*100))
+    # print('Acc: %2.2f %%'%(adv_acc*100))
+    
+    event = "final_result"
+    data = {
+        "message": "攻击执行完成, 结果信息已保存",
+        "progress": 100,
+        "log": f"[100%] 攻击执行完成, 结果信息已保存",
+        "details": {
+            "original_samples": ori_images_flod,
+            "adversarial_samples": adv_images_flod,
+            "summary": {
+                "task_success_count": attack_success_count,
+                "task_failure_count": attack_failure_count,
+                "original_samples_accuracy": ori_acc,
+                "adversarial_samples_accuracy": adv_acc
+            }
+        }
+    }
+    sse_print(event, data)
+
