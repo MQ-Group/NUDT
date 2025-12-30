@@ -60,7 +60,7 @@ docker_inout_dir/
 │   ├── model/
 │   │   └── model_name/                 # 模型目录
 │   │       └── weight.pt               # 模型权重
-│   │           └── model_cfg.yaml          # 模型配置文件
+│   │       └── model_cfg.yaml          # 模型配置文件
 │   └── data/
 │       └── data_name/                  # 数据集目录
 │           └── data/                   # 数据集
@@ -75,8 +75,8 @@ cd docker_inout_dir
 docker run --rm --gpus all \
     -v ./input:/project/input:ro \
     -v ./output:/project/output:rw \
-    -e INPUT_PATH=./input \
-    -e OUTPUT_PATH=./output \
+    -e INPUT_PATH=/project/input \
+    -e OUTPUT_PATH=/project/output \
     -e process=train \
     -e attack_method=fgsm \
     -e defend_method=scale \
