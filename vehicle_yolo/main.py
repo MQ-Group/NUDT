@@ -30,7 +30,7 @@ def parse_args():
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--selected_samples', type=int, default=20, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
     
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')

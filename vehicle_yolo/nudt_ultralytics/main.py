@@ -96,7 +96,7 @@ def main(args):
         from attacks.attacks import attacks
         att = attacks(args)
         att.run_adv()
-        import glob
+        # import glob
         # ori_dataset_name = glob.glob(os.path.join(f'{args.input_path}/data', '*'))[0].split('/')[-1]
         # adv_data_path = f'{args.output_path}/adv_{ori_dataset_name}'
         # os.system(f"cp {args.data_yaml} {adv_data_path}")

@@ -23,6 +23,7 @@
 * `random_start`（bool 选填，默认为`False`）：是否随机初始化扰动，支持枚举值（第一个为默认值）:`False`, `True`。
 * `loss_function`（str 选填，默认为`cross_entropy`）：损失函数类型，支持枚举值（第一个为默认值）:`cross_entropy`, `mse`, `l1`, `binary_cross_entropy`。
 * `optimization_method`（str 选填，默认为`adam`）：优化方法，支持枚举值（第一个为默认值）:`adam`, `sgd`。
+* `lr`（float 选填，默认为`0.001`）：优化器学习率。
 * `scaling_factor`（float 选填，默认为`0.9`）：缩放因子。
 * `interpolate_method`（str 选填，默认为`bilinear`）：插值方法，支持枚举值（第一个为默认值）:`bilinear`, `nearest`。
 * `image_quality`（int 选填，默认为`90`）：图像质量。
@@ -72,7 +73,7 @@ docker_inout_dir/
 ```bash
 cd docker_inout_dir
 
-docker run --rm --gpus all \
+docker run --rm \
     -v ./input:/project/input:ro \
     -v ./output:/project/output:rw \
     -e INPUT_PATH=/project/input \
@@ -85,15 +86,15 @@ docker run --rm --gpus all \
     -e device=cuda \
     -e workers=0 \
     -e selected_samples=64 \
-    -e epsilon=0.0313
-    -e step_size=0.0078
-    -e max_iterations=50
-    -e random_start=False
-    -e loss_function=cross_entropy
-    -e optimization_method=adam
-    -e scaling_factor=0.9
-    -e interpolate_method=bilinear
-    -e image_quality=90
-    -e filter_kernel_size=3
+    -e epsilon=0.0313 \
+    -e step_size=0.0078 \
+    -e max_iterations=50 \
+    -e random_start=False \
+    -e loss_function=cross_entropy \
+    -e optimization_method=adam \
+    -e scaling_factor=0.9 \
+    -e interpolate_method=bilinear \
+    -e image_quality=90 \
+    -e filter_kernel_size=3 \
     vehicle_yolo:latest
 ```
