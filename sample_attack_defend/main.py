@@ -41,10 +41,9 @@ def parse_args():
     parser.add_argument('--random_start', type=bool, default=True, help='initial random start for attack method')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
     
-    parser.add_argument('--std', type=float, default=0.1, help='standard deviation for attack method')
-    parser.add_argument('--scale', type=int, default=10, help='scale for attack method')
+    parser.add_argument('--std', type=float, default=0.1, help='standard deviation for gn and jitter attack method')
+    parser.add_argument('--scale', type=int, default=10, help='scale for jitter attack method')
     
-
     parser.add_argument('--noise_type', type=str, default='guassian', choices=['guassian', 'uniform'], help='pgdrs parameter for defend method')
     parser.add_argument('--noise_sd', type=float, default=0.5, help='pgdrs parameter noise standard deviation for defend method')
 

@@ -30,8 +30,8 @@
 * ~~`interpolate_method`（str 选填，默认为`bilinear`）：插值方法，支持枚举值（第一个为默认值）:`bilinear`, `nearest`。~~
 * ~~`image_quality`（int 选填，默认为`90`）：图像质量。~~
 * ~~`filter_kernel_size`（int 选填，默认为`3`）：滤波器核大小。~~
-* ~~`scale`（int 选填，默认为`10`）：尺度。~~
-* ~~`std`（float 选填，默认为`0.1`）：标准差。~~
+* `scale`（int 选填，默认为`10`）：尺度。
+* `std`（float 选填，默认为`0.1`）：标准差。
 * `noise_type`str 选填，默认为`guassian`）：噪声类型，支持枚举值（第一个为默认值）:`guassian`, `uniform`。
 * `noise_sd`（float 选填，默认为`0.5`）：噪声标准差。
 * `kernel_size`（int 选填，默认为`2`）：滤波器核大小。
@@ -39,25 +39,32 @@
 * `k_nearest`（int 选填，默认为`20`）：`process`为`detect`且`detect_method`为`local_intrinsic_dimensionality`时有效，注意该值不能大于`selected_samples`。
 * `detection_threshold`（float 选填，默认为`0.5`）：样本检测阈值，样本检测方法结果若大于该值表示检测样本为对抗样本，`process`为`detect`时有效。
 
+### 说明
+-- `process`为`adv`，使用原始cifar10数据集，生成对抗样本保存为.dat文件做为对抗样本数据集，其中也包含原始样本
+-- `process`为`attack`，只能使用生成对抗样本数据集
+-- `process`为`defend`，只能使用原始cifar10数据集
+-- `process`为`detect`，只能使用原始cifar10数据集
 
 ### 攻击防御检测方法的有效参数
 ss == spatial_smoothing \
 fs == feature_squeezing \
-lid = local_intrinsic_dimensionality \
+lid = local_intrinsic_dimensionality
 
-|  | fgsm | pgd | bim | cw | deepfool | gn | jitter | yopo | pgdrs | trades | free | fast | ss | fs | lid |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| epsilon | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
-| step_size |  | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
-| max_iterations |  | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |
-| random_start |  | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| lr |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| noise_type |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| noise_sd |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| kernel_size |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| bit_depth |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| k_nearest |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| detection_threshold |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+|                       | fgsm | pgd | bim | cw | deepfool | gn | jitter | yopo | pgdrs | trades | free | fast | ss | fs | lid |
+|---                    |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| epsilon               | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
+| step_size             |  | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
+| max_iterations        |  | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |
+| random_start          |  | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| lr                    |  |  |  | 1 |  |  |  |  |  |  |  |  |  |  |  |
+| scale                 |  |  |  |  |  |  | 1 |  |  |  |  |  |  |  |  |
+| std                   |  |  |  |  |  | 1 | 1 |  |  |  |  |  |  |  |  |
+| noise_type            |  |  |  |  |  |  |  |  | 1 |  |  |  |  |  |  |
+| noise_sd              |  |  |  |  |  |  |  |  | 1 |  |  |  |  |  |  |
+| kernel_size           |  |  |  |  |  |  |  |  |  |  |  |  | 1 | 1 |  |
+| bit_depth             |  |  |  |  |  |  |  |  |  |  |  |  |  | 1 |  |
+| k_nearest             |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1 |
+| detection_threshold   |  |  |  |  |  |  |  |  |  |  |  |  | 1 | 1 | 1 |
 
 
 ## 快速开始
