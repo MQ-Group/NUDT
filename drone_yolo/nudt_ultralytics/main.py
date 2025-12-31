@@ -125,7 +125,7 @@ def main(args):
         data = {
             "message": "数据集抽取完毕.",
             "progress": 100,
-            "log": f"[100%] 从{args.data_path}数据集中抽取{args.selected_samples}张样本生成小数据集保存在sampled_data_path"
+            "log": f"[100%] 从{args.data_path}数据集中抽取{args.selected_samples}张样本生成小数据集保存在{sampled_data_path}"
         }
         sse_print(event, data)
     

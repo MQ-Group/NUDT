@@ -1,23 +1,24 @@
 # 车辆识别场景
 
 ## 概述
-本项目基于 adversarial-attacks-pytorch 库实现车辆识别场景下的样本攻击。它支持对抗样本生成、攻击评估。
+本项目基于 adversarial-attacks-pytorch 库实现样本攻击和防御场景。它支持对抗样本生成、攻击评估、防御训练、对抗样本检测。
 
 
 ## 环境变量：
 * `input_path`（str 必填）: 指定输入路径，在此路径下有权重文件和数据集文件。
 * `output_path`（str 必填）: 指定输出路径，在此路径下保存生成的对抗样本和防御训练的权重。
-* `process`（str 必填）: 指定进程名称，支持枚举值:`adv`, `attack`, ~~`defend`, `train`, `test`, `sample`~~。
+* `process`（str 必填）: 指定进程名称，支持枚举值:`adv`, `attack`, `defend`, `detect`~~, `test`, `sample`~~。
 * ~~`model`（str 必填）: 指定模型名称，支持枚举值:`yolov5`, `yolov8`, `yolov10` 。~~
 * ~~`data`（str 必填）: 指定数据集，支持枚举值:`kitti`, `bdd100k`, `ua-detrac`, `dawn`, `special_vehicle`, `flir_adas`。~~
 * ~~`class_number`（int 必填）: 指定目标类别数量，与数据集绑定，对于kitti数据集为`8` 。~~
-* `attack_method`（str 选填，默认为`fgsm`）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `fgsm`, `pgd`, `bim`, `cw`, `deepfool`。
-* ~~`defend_method`（str 选填，默认为`scale`）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`scale`, `compression`, `fgsm_denoise`, `neural_cleanse`, `pgd_purifier`。~~
+* `attack_method`（str 选填，默认为`fgsm`）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `fgsm`, `pgd`, `bim`, `cw`, `deepfool`, `gn`, `jitter`, `yopo`, `pgdrs`, `trades`, `free`, `fast`。
+* `defend_method`（str 选填，默认为`yopo`）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`yopo`, `pgdrs`, `trades`, `free`, `fast`, `fgsm`, `pgd`, `bim`, `cw`, `deepfool`, `gn`, `jitter`。
+* `detect_method`（str 选填，默认为`spatial_smoothing`）: 指定防御方法，若`process`为`detect`则必填，支持枚举值（第一个为默认值）:`spatial_smoothing`, `feature_squeezing`, `local_intrinsic_dimensionality`。
 * ~~`epochs`（int 选填，默认为`100`）：训练迭代次数，若`process`为`train`时有效。~~
 * `batch`（int 选填，默认为`16`）：训练批处理大小，若`process`为`train`或`test`时有效。
 * `device`（str 选填，默认为`cpu`）：使用cpu或cuda，支持枚举值（第一个为默认值）:`cpu`, `cuda`。
 * `workers`（int 选填，默认为`0`）：加载数据集时workers的数量。
-* `selected_samples`（int 选填，默认为64，0表示数据集全部样本数据）: 若`process`为`adv`时有效，生成对抗样本时使用的样本数。
+* `selected_samples`（int 选填，默认为64，0表示数据集全部样本数据）: 若`process`为`adv`或`detect`时有效，使用的样本数。
 * `epsilon`（float 选填，默认为`8/255`）：扰动强度参数，控制对抗扰动大小。
 * `step_size`（float 选填，默认为`2/255`）：步长，迭代攻击的更新幅度。
 * `max_iterations`（int 选填，默认为`50`）：最大迭代次数。
@@ -29,31 +30,42 @@
 * ~~`interpolate_method`（str 选填，默认为`bilinear`）：插值方法，支持枚举值（第一个为默认值）:`bilinear`, `nearest`。~~
 * ~~`image_quality`（int 选填，默认为`90`）：图像质量。~~
 * ~~`filter_kernel_size`（int 选填，默认为`3`）：滤波器核大小。~~
-* `scale`（int 选填，默认为`10`）：尺度。
-* `std`（float 选填，默认为`0.1`）：标准差。
+* ~~`scale`（int 选填，默认为`10`）：尺度。~~
+* ~~`std`（float 选填，默认为`0.1`）：标准差。~~
+* `noise_type`str 选填，默认为`guassian`）：噪声类型，支持枚举值（第一个为默认值）:`guassian`, `uniform`。
+* `noise_sd`（float 选填，默认为`0.5`）：噪声标准差。
+* `kernel_size`（int 选填，默认为`2`）：滤波器核大小。
+* `bit_depth`（int 选填，默认为`4`）：比特深度。
+* `k_nearest`（int 选填，默认为`20`）：`process`为`detect`且`detect_method`为`local_intrinsic_dimensionality`时有效，注意该值不能大于`selected_samples`。
+* `detection_threshold`（float 选填，默认为`0.5`）：样本检测阈值，样本检测方法结果若大于该值表示检测样本为对抗样本，`process`为`detect`时有效。
 
-### 攻击防御方法的有效参数
-|  | fgsm | pgd | bim | cw | deepfool | scale | compression | fgsm_denoise | neural_cleanse | pgd_purifier |
-|---|---|---|---|---|---|---|---|---|---|---|
-| epsilon | 1 | 1 | 1 |  |  |  |  | 1 |  | 1 |
-| step_size |  | 1 | 1 |  |  |  |  |  |  | 1 |
-| max_iterations |  | 1 | 1 | 1 |  |  |  |  |  | 1 |
-| random_start |  | 1 |  |  |  |  |  |  |  |  |
-| loss_function | 1 | 1 | 1 |  |  |  |  |  |  |  |
-| optimization_method |  |  |  | 1 |  |  |  |  |  |  |
-| lr |  |  |  | 1 |  |  |  |  |  |  |
-| scaling_factor |  |  |  |  |  | 1 |  |  |  |  |
-| interpolate_method |  |  |  |  |  | 1 |  |  |  |  |
-| image_quality |  |  |  |  |  |  | 1 |  |  |  |
-| filter_kernel_size |  |  |  |  |  |  |  |  | 1 |  |
+
+### 攻击防御检测方法的有效参数
+ss == spatial_smoothing \
+fs == feature_squeezing \
+lid = local_intrinsic_dimensionality \
+
+|  | fgsm | pgd | bim | cw | deepfool | gn | jitter | yopo | pgdrs | trades | free | fast | ss | fs | lid |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| epsilon | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
+| step_size |  | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
+| max_iterations |  | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |
+| random_start |  | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| lr |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| noise_type |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| noise_sd |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| kernel_size |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| bit_depth |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| k_nearest |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
+| detection_threshold |  |  |  |  |  |  |  |  |  |  |  |  |  |  |  |
 
 
 ## 快速开始
 
 ### 构建 Docker 镜像
 ```bash
-cd vehicle_yolo
-docker build -t vehicle_yolo:latest .
+cd sample_attack_defend
+docker build -t sample_attack_defend:latest .
 ```
 
 

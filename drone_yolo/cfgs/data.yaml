@@ -1,4 +1,4 @@
-path: ./input/data/yolo_drone_detection/yolo_drone_detection/
+path: ./input/data/sampled_drone_type/sampled_drone_type/
 train: images/train
 val: images/val
 test: null

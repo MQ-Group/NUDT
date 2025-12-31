@@ -1,4 +1,4 @@
-path: ./input/data/kitti/kitti/
+path: ./input/data/sampled_kitti/sampled_kitti/
 train: images/train
 val: images/val
 nc: 8
