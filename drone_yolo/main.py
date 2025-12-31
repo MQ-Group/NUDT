@@ -149,6 +149,7 @@ def yolo_cfg(args):
     cfg.random_start = args.random_start
     cfg.loss_function = args.loss_function
     cfg.optimization_method = args.optimization_method
+    cfg.lr = args.lr
     cfg.scaling_factor = args.scaling_factor
     cfg.interpolate_method = args.interpolate_method
     cfg.image_quality = args.image_quality

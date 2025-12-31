@@ -220,6 +220,7 @@ class attacks:
             loss_fn = self.gen_loss_fn(loss_function)
         elif self.cfg.task == 'detect':
             images = self.detect_preprocess(im=batch["img"])
+            images = images / 255.0
             loss_fn = v8DetectionLoss_nudt(self.model, self.cfg)
         adv_images = images.clone().detach()
         
@@ -275,6 +276,7 @@ class attacks:
             # print(batch['img'])
             if batch['img'].dtype != torch.float32:
                 batch['img'] = batch['img'].to(torch.float32)
+            batch['img'] = batch['img'] / 255.0
             batch['img'].requires_grad = True
             preds = self.model.forward(x=batch["img"])
             loss_fn = v8DetectionLoss_nudt(self.model, self.cfg)
@@ -283,13 +285,10 @@ class attacks:
             loss = loss[1]
                        
         images = batch['img']
-        print(images[0,0,0,0])
         # Update adversarial images
         grad = torch.autograd.grad(loss, images, retain_graph=False, create_graph=False)[0]
         adv_images = images + eps * grad.sign()
-        print(adv_images[0,0,0,0])
         adv_images = torch.clamp(adv_images, min=0, max=1).detach()
-        print(adv_images[0,0,0,0])
 
         return adv_images
     
@@ -321,6 +320,7 @@ class attacks:
             loss_fn = self.gen_loss_fn(loss_function)
         elif self.cfg.task == 'detect':
             images = self.detect_preprocess(im=batch["img"])
+            images = images / 255.0
             loss_fn = v8DetectionLoss_nudt(self.model, self.cfg)
             
         ori_images = images.clone().detach()
@@ -368,6 +368,7 @@ class attacks:
             labels = batch["cls"]
         elif self.cfg.task == 'detect':
             images = self.detect_preprocess(im=batch["img"])
+            images = images / 255.0
             labels = batch["cls"]
             
         
@@ -483,6 +484,7 @@ class attacks:
             labels = batch["cls"]
         elif self.cfg.task == 'detect':
             images = self.detect_preprocess(im=batch["img"])
+            images = images / 255.0
             loss_fn = v8DetectionLoss_nudt(self.model, self.cfg)
         
         # w = torch.zeros_like(images).detach() # Requires 2x times

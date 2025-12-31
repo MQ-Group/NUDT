@@ -34,7 +34,7 @@
 * `std`（float 选填，默认为`0.1`）：标准差。
 * `noise_type`str 选填，默认为`guassian`）：噪声类型，支持枚举值（第一个为默认值）:`guassian`, `uniform`。
 * `noise_sd`（float 选填，默认为`0.5`）：噪声标准差。
-* `kernel_size`（int 选填，默认为`2`）：滤波器核大小。
+* `kernel_size`（int 选填，默认为`3`）：滤波器核大小。
 * `bit_depth`（int 选填，默认为`4`）：比特深度。
 * `k_nearest`（int 选填，默认为`20`）：`process`为`detect`且`detect_method`为`local_intrinsic_dimensionality`时有效，注意该值不能大于`selected_samples`。
 * `detection_threshold`（float 选填，默认为`0.5`）：样本检测阈值，样本检测方法结果若大于该值表示检测样本为对抗样本，`process`为`detect`时有效。
@@ -75,19 +75,52 @@ cd sample_attack_defend
 docker build -t sample_attack_defend:latest .
 ```
 
-
-## 输入目录结构
+### 输入输出目录结构
 ```
-input/
-├── model/
-│   └── model_name/                 # 模型目录
-│       └── weight.pt               # 模型权重
-│       └── model_cfg.yaml          # 模型配置文件
-└── data/
-    └── data_name/                  # 数据集目录
-        └── data/                   # 数据集
-        └── data_cfg.yaml           # 数据集配置文件
+docker_inout_dir/
+├── input/
+│   ├── model/
+│   │   └── model_name/                 # 模型目录
+│   │       └── weight.pt               # 模型权重
+│   │       └── model_cfg.yaml          # 模型配置文件
+│   └── data/
+│       └── data_name/                  # 数据集目录
+│           └── data/                   # 数据集
+│           └── data_cfg.yaml           # 数据集配置文件
+├── output/
 ```
 
+### 运行 Docker 镜像
+```bash
+cd docker_inout_dir
 
+docker run --rm \
+    -v /data6/user23215430/nudt/drone_yolo/input:/project/input:ro \
+    -v /data6/user23215430/nudt/drone_yolo/output:/project/output:rw \
+    -e INPUT_PATH=/project/input \
+    -e OUTPUT_PATH=/project/output \
+    -e process=train \
+    -e attack_method=fgsm \
+    -e defend_method=yopo \
+    -e detect_method=spatial_smoothing \
+    -e epochs=100 \
+    -e batch=16 \
+    -e device=cuda \
+    -e workers=0 \
+    -e selected_samples=64 \
+    -e epsilon=0.0313 \
+    -e step_size=0.0078 \
+    -e max_iterations=50 \
+    -e random_start=False \
+    -e lr=0.001 \
+    -e scale=10 \
+    -e std=0.1 \
+    -e noise_type=guassian \
+    -e noise_sd=0.5 \
+    -e kernel_size=3 \       
+    -e bit_depth=4 \
+    -e k_nearest= 20 \
+    -e detection_threshold=0.5 \
+    drone_yolo:latest
+```
 

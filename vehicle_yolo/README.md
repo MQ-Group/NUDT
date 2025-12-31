@@ -92,6 +92,7 @@ docker run --rm \
     -e random_start=False \
     -e loss_function=cross_entropy \
     -e optimization_method=adam \
+    -e lr=0.001 \
     -e scaling_factor=0.9 \
     -e interpolate_method=bilinear \
     -e image_quality=90 \
