@@ -13,7 +13,8 @@ from robustbench.utils import load_model, clean_accuracy
 
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter
+from torchdefends import YOPO, TRADES, FREE, FAST
 from .utils import imshow, get_pred
 from torchvision import transforms
 
@@ -83,22 +84,32 @@ def attack(args):
             atk = DeepFool(model, std=args.std)
         elif args.attack_method == 'jitter':
             atk = Jitter(eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
+        elif args.attack_method == 'yopo':
+            atk = YOPO(model, eps=args.epsilon)
+        elif args.attack_method == 'pgdrs':
+            atk = PGDRS(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, noise_type=args.noise_type, noise_sd=args.noise_sd, noise_batch_size=5, batch_max=2048)
+        elif args.attack_method == 'trades':
+            atk = TRADES(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
+        elif args.attack_method == 'free':
+            atk = FREE(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
+        elif args.attack_method == 'fast':
+            atk = FAST(model, eps=args.epsilon)
         else:
             raise ValueError('不支持的攻击方法.')
 
-        event = "attack"
+        event = "attack_init"
         data = {
             "status": "success",
             "message": "攻击初始化完成.",
-            "attack method": args.attack_method
+            "attack_method": args.attack_method
         }
         sse_print(event, data)
     except Exception as e:
-        event = "attack"
+        event = "attack_init"
         data = {
             "status": "failure",
             "message": f"{e}",
-            "attack method": args.attack_method
+            "attack_method": args.attack_method
         }
         sse_print(event, data)
     
@@ -106,74 +117,97 @@ def attack(args):
     
     ori_adv_loader = atk.load(
         load_path=args.data_path,
-        batch_size=args.batch,
+        batch_size=1,
         shuffle=False,
         normalize=None,
         load_predictions=False,
         load_clean_inputs=True,
         )
-    adv_images, labels, ori_images = next(iter(ori_adv_loader))
-    # print(adv_images.shape)
-    # print(labels.shape)
-    # print(ori_images.shape)
     
     ori_images_flod = f"{args.output_path}/ori_images"
     adv_images_flod = f"{args.output_path}/adv_images"
     os.makedirs(ori_images_flod, exist_ok=True)
     os.makedirs(adv_images_flod, exist_ok=True)
     
-    
-    total_iamges = adv_images.shape[0]
+    total_iamges = len(ori_adv_loader)
+    ori_acc_sum = 0.0
+    adv_acc_sum = 0.0
     attack_success_count = 0
     attack_failure_count = 0
-    for i in range(total_iamges):
-        ori_pred_cls = get_pred(model, ori_images[i:i+1], device)
-        adv_pred_cls = get_pred(model, adv_images[i:i+1], device)
+    
+    for i, batch_data in enumerate(ori_adv_loader):
+        adv_images, labels, ori_images = batch_data
+        # print(adv_images.shape)
+        # print(labels.shape)
+        # print(ori_images.shape)
+        
+        ori_acc = clean_accuracy(model, ori_images.to(device), labels.to(device))
+        adv_acc = clean_accuracy(model, adv_images.to(device), labels.to(device))
+        # print('Acc: %2.2f %%'%(ori_acc*100))
+        # print('Acc: %2.2f %%'%(adv_acc*100))
+        ori_acc_sum += ori_acc*100
+        adv_acc_sum += adv_acc*100
+        
+        ori_pred_cls = get_pred(model, ori_images, device)
+        adv_pred_cls = get_pred(model, adv_images, device)
         # print(ori_pred_cls)
         # print(adv_pred_cls)
         
         if ori_pred_cls != adv_pred_cls:
-            attack_result = '成功'
+            # attack_result = '成功'
+            attack_result = 'success'
             attack_success_count += 1
         else:
-            attack_result = '失败'
+            # attack_result = '失败'
+            attack_result = 'failure'
             attack_failure_count += 1
             
         ori_img_save_path = f"{ori_images_flod}/ori_img_{i}_pred_cls_{ori_pred_cls.item()}.jpg"
         adv_img_save_path = f"{adv_images_flod}/adv_img_{i}_pred_cls_{adv_pred_cls.item()}.jpg"
         
         to_pil = transforms.ToPILImage()
-        pil_image = to_pil(ori_images[i])
-        pil_image = to_pil(adv_images[i])
+        pil_image = to_pil(ori_images[0])
+        pil_image = to_pil(adv_images[0])
         pil_image.save(ori_img_save_path)
         pil_image.save(adv_img_save_path)
         
-        event = "attack"
+        event = "attack_inference"
         data = {
-            "message": "正在执行攻击...",
+            "message": "正在执行攻击推理...",
             "progress": int(i/total_iamges*100),
-            "log": f"[{int(i/total_iamges*100)}%] 原始样本: {ori_img_save_path}, 原始样本预测类别: {ori_pred_cls.item()}, 对抗样本: {adv_img_save_path}, 对抗样本预测类别: {ori_pred_cls.item()}, 攻击结果: {attack_result}"
+            # "log": f"[{int(i/total_iamges*100)}%] 正在执行攻击推理... 原始样本: {ori_img_save_path}, 原始样本预测准确率: {ori_acc*100:.2f}%, 原始样本预测类别: {ori_pred_cls.item()}, 对抗样本: {adv_img_save_path}, 对抗样本预测准确率: {adv_acc*100:.2f}%, 对抗样本预测类别: {ori_pred_cls.item()}, 攻击结果: {attack_result}"
+            "log": f"[{int(i/total_iamges*100)}%] 正在执行攻击推理...",
+            "details": {
+                "original_sample": {
+                    "accuracy": f"{ori_acc*100:.2f}%",
+                    "predict_class": ori_pred_cls.item(),
+                    "file_path": ori_img_save_path
+                },
+                "adversarial_sample": {
+                    "accuracy": f"{adv_acc*100:.2f}%",
+                    "predict_class": adv_pred_cls.item(),
+                    "file_path": adv_img_save_path
+                },
+                "attack_result": attack_result
+            }
         }
         sse_print(event, data)
     
-    ori_acc = clean_accuracy(model, ori_images.to(device), labels.to(device))
-    adv_acc = clean_accuracy(model, adv_images.to(device), labels.to(device))
-    # print('Acc: %2.2f %%'%(ori_acc*100))
-    # print('Acc: %2.2f %%'%(adv_acc*100))
-    
+
     event = "final_result"
     data = {
-        "message": "攻击执行完成, 结果信息已保存",
+        "message": "攻击推理执行完成.",
         "progress": 100,
-        "log": f"[100%] 攻击执行完成, 结果信息已保存",
+        "log": f"[100%] 攻击推理执行完成.",
         "details": {
             "original_samples": ori_images_flod,
             "adversarial_samples": adv_images_flod,
             "summary": {
+                "total_iamges": total_iamges,
                 "task_success_count": attack_success_count,
                 "task_failure_count": attack_failure_count,
-                "original_samples_accuracy": ori_acc,
-                "adversarial_samples_accuracy": adv_acc
+                "original_samples_accuracy": f"{ori_acc_sum/total_iamges:.2f}%",
+                "adversarial_samples_accuracy": f"{adv_acc_sum/total_iamges:.2f}%"
             }
         }
     }

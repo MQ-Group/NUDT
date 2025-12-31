@@ -13,7 +13,8 @@ from robustbench.utils import load_model, clean_accuracy
 
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter
+from torchdefends import YOPO, TRADES, FREE, FAST
 from .utils import imshow, get_pred
 
 
@@ -42,7 +43,7 @@ def adv(args):
         else:
             raise ValueError('数据集不支持, 仅支持数据集: cifar10, cifar100.')
 
-        event = "data_load_validated"
+        event = "data_load"
         data = {
             "status": "success",
             "message": "数据集加载完毕.",
@@ -51,7 +52,7 @@ def adv(args):
         }
         sse_print(event, data)
     except Exception as e:
-        event = "data_load_validated"
+        event = "data_load"
         data = {
             "status": "failure",
             "message": f"{e}",
@@ -91,22 +92,36 @@ def adv(args):
             atk = CW(model, c=1, kappa=0, steps=args.max_iterations, lr=args.lr)
         elif args.attack_method == 'deepfool':
             atk = DeepFool(model, steps=args.max_iterations, overshoot=0.02)
+        elif args.attack_method == 'GN':
+            atk = DeepFool(model, std=args.std)
+        elif args.attack_method == 'jitter':
+            atk = Jitter(eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
+        elif args.attack_method == 'yopo':
+            atk = YOPO(model, eps=args.epsilon)
+        elif args.attack_method == 'pgdrs':
+            atk = PGDRS(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, noise_type=args.noise_type, noise_sd=args.noise_sd, noise_batch_size=5, batch_max=2048)
+        elif args.attack_method == 'trades':
+            atk = TRADES(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
+        elif args.attack_method == 'free':
+            atk = FREE(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
+        elif args.attack_method == 'fast':
+            atk = FAST(model, eps=args.epsilon)
         else:
             raise ValueError('不支持的攻击方法.')
 
-        event = "adv"
+        event = "adversarial_samples_generation_init"
         data = {
             "status": "success",
             "message": "攻击初始化完成.",
-            "attack method": args.attack_method
+            "attack_method": args.attack_method
         }
         sse_print(event, data)
     except Exception as e:
-        event = "adv"
+        event = "adversarial_samples_generation_init"
         data = {
             "status": "failure",
             "message": f"{e}",
-            "attack method": args.attack_method
+            "attack_method": args.attack_method
         }
         sse_print(event, data)
         import sys
@@ -114,13 +129,14 @@ def adv(args):
         
     # print(atk)
     
-    event = "adversarial_samples_generation_validated"
-    for i in range(images.shape[0]):
+    total_iamges = images.shape[0]
+    event = "adversarial_samples_generation_run"
+    for i in range(total_iamges):
         data = {
             "status": "success",
             "message": "生成对抗样本...",
-            "progress": int(i/args.selected_samples*100),
-            "log": f"[{int(i/args.selected_samples*100)}%] 正在生成第{i}张对抗样本, 总共需要生成{args.selected_samples}张."
+            "progress": int(i/total_iamges*100),
+            "log": f"[{int(i/total_iamges*100)}%] 正在生成第{i}张对抗样本, 总共需要生成{total_iamges}张."
         }
         sse_print(event, data)
 
@@ -146,14 +162,14 @@ def adv(args):
         )
     os.system(f"cp {args.data_yaml} {args.output_path}")
     
-    event = "adversarial_samples_generation_validated"
+    event = "final_result"
     data = {
         "status": "success",
         "message": "对抗样本生成完成",
         "progress": 100,
-        "log": f"[100%] 对抗样本生成完成, 共生成{args.selected_samples}张.",
-        "data name": adv_data_name,
-        "data path": adv_data_path
+        "log": f"[100%] 对抗样本生成完成, 共生成{total_iamges}张.",
+        "data_name": adv_data_name,
+        "data_path": adv_data_path
     }
     sse_print(event, data)
     

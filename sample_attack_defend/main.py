@@ -8,6 +8,8 @@ from utils.sse import sse_input_path_validated, sse_output_path_validated
 from utils.yaml_rw import load_yaml, save_yaml
 from attacks.attack import attack
 from attacks.adv import adv
+from defends.defend import defend
+from detects.detect import detect
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -15,14 +17,15 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='./input', help='input path')
     parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack'], help='process name')
+    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack', 'defend', 'detect'], help='process name')
     # parser.add_argument('--process', type=str, default='attack', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
     # parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
     # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
     # parser.add_argument('--class_number', type=int, default=8, choices=[8, 10, 4, 1, 1000], help='number of class. 8 for kitti, 10 for bdd100k, 4 for ua-detrac, 5 for special_vehicle, 1 for dawn, 1 for flir_adas')
     
-    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'jitter', 'fab'], help='attack method')
-    # parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
+    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'yopo', 'pgdrs', 'trades', 'free', 'fast'], help='attack method')
+    parser.add_argument('--defend_method', type=str, default='yopo', choices=['yopo', 'pgdrs', 'trades', 'free', 'fast', 'fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter'], help='defend method')
+    parser.add_argument('--detect_method', type=str, default='spatial_smoothing', choices=['spatial_smoothing', 'feature_squeezing', 'local_intrinsic_dimensionality'], help='detect method')
     
     parser.add_argument('--epochs', type=int, default=1, help='epochs')
     parser.add_argument('--batch', type=int, default=16, help='batch size')
@@ -42,10 +45,13 @@ def parse_args():
     parser.add_argument('--scale', type=int, default=10, help='scale for attack method')
     
 
-    # parser.add_argument('--scaling_factor', type=float, default=0.9, help='scaling factor (0, 1) for defend method')
-    # parser.add_argument('--interpolate_method', type=str, default='bilinear', choices=['bilinear', 'nearest'], help='interpolate method for defend method')
-    # parser.add_argument('--image_quality', type=int, default=90, help='the image quality for defend method, on a scale from 1 (worst) to 95 (best). Values above 95 should be avoided.')
-    # parser.add_argument('--filter_kernel_size', type=int, default=3, help='filter kernel size for defend method.')
+    parser.add_argument('--noise_type', type=str, default='guassian', choices=['guassian', 'uniform'], help='pgdrs parameter for defend method')
+    parser.add_argument('--noise_sd', type=float, default=0.5, help='pgdrs parameter noise standard deviation for defend method')
+
+    parser.add_argument('--kernel_size', type=int, default=3, help='ss and fs for detect method')
+    parser.add_argument('--bit_depth', type=int, default=4, help='fs for detect method')
+    parser.add_argument('--k_nearest', type=int, default=20, help='k_nearest must less than selected_samples lid for detect method')
+    parser.add_argument('--detection_threshold', type=float, default=0.5, help='detection threshold for detect method')
     
     
     args = parser.parse_args()
@@ -86,7 +92,7 @@ def add_args(args):
     # print(data_name)
     args.data_yaml = data_yaml
     args.data_name = data_name
-    if args.process == 'adv':
+    if args.process in ['adv', 'defend', 'detect']:
         data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
     elif args.process == 'attack':
         data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.dat'))[0]
@@ -101,9 +107,11 @@ def main(args):
     elif args.process == 'attack':
         attack(args)
     elif args.process == 'defend':
-        attack(args)
+        defend(args)
+    elif args.process == 'detect':
+        detect(args)
     else:
-        pass
+        raise ValueError('任务不支持.')
     
 if __name__ == '__main__':
     args = parse_args()

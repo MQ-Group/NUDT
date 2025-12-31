@@ -28,9 +28,8 @@ vehicle_yolo/input/
 vehicle_yolo/output/
 drone_yolo/input/
 drone_yolo/output/
-
-sample_attack/input/
-sample_attack/output/
+sample_attack_defend/input/
+sample_attack_defend/output/
 
 
 poisioning/input/

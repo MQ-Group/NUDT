@@ -38,9 +38,9 @@ class attacks:
             self.model = DetectionModel(cfg=self.cfg.model, ch=3, nc=self.args.nc, verbose=self.cfg.verbose)
             # print(self.model)
             ckpt, file = torch_safe_load(self.cfg.pretrained)
-            print(ckpt.keys())
-            print(file)
-            print(self.cfg.pretrained)
+            # print(ckpt.keys())
+            # print(file)
+            # print(self.cfg.pretrained)
             self.model.load(weights=ckpt["model"])
             sse_model_loaded(model_name=self.args.model_name, weight_path=self.cfg.pretrained)
             # for param in self.model.parameters():

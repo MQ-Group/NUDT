@@ -112,7 +112,7 @@ def yolo_cfg(args):
         cfg.mode = 'predict'
         cfg.batch = 1
         cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
-        cfg.device = args.device
+        cfg.device = 'cpu'
         cfg.workers = args.workers
     elif args.process == 'attack':
         cfg.mode = 'validate'

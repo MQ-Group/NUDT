@@ -80,7 +80,7 @@ def add_substr_to_state_dict(state_dict, substr):
 
 def load_model(model_name: str,
             #    model_dir: Union[str, Path] = './models',
-               model_path: str,
+               model_path: str = '',
                dataset: Union[str, BenchmarkDataset] = BenchmarkDataset.cifar_10,
                threat_model: Union[str, ThreatModel] = ThreatModel.Linf,
                norm: Optional[str] = None) -> nn.Module:
@@ -129,52 +129,54 @@ def load_model(model_name: str,
         #     print('-'*100)
         #     download_gdrive(models[model_name]['gdrive_id'], model_path)
         # checkpoint = torch.load(model_path, map_location=torch.device('cpu'))
-        try:
-            if os.path.isfile(model_path):
-                checkpoint = torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)
+        if model_path != '':
+            try:
+                if os.path.isfile(model_path):
+                    checkpoint = torch.load(model_path, map_location=torch.device('cpu'), weights_only=True)
+                    from utils.sse import sse_print
+                    event = "model_load"
+                    data = {
+                        "status": "success",
+                        "message": "模型加载完成.",
+                        "model name": model_name,
+                        "model path": model_path
+                    }
+                    sse_print(event, data)
+                else:
+                    raise ValueError('模型权重文件不存在.')
+            except Exception as e:
                 from utils.sse import sse_print
-                event = "model_load_validated"
+                event = "model_load"
                 data = {
-                    "status": "success",
-                    "message": "模型加载完成.",
+                    "status": "failure",
+                    "message": f"{e}",
                     "model name": model_name,
                     "model path": model_path
                 }
                 sse_print(event, data)
-            else:
-                raise ValueError('模型权重文件不存在.')
-        except Exception as e:
-            from utils.sse import sse_print
-            event = "model_load_validated"
-            data = {
-                "status": "failure",
-                "message": f"{e}",
-                "model name": model_name,
-                "model path": model_path
-            }
-            sse_print(event, data)
+                
+            if 'Kireev2021Effectiveness' in model_name or model_name == 'Andriushchenko2020Understanding':
+                checkpoint = checkpoint['last']  # we take the last model (choices: 'last', 'best')
+            try:
+                # needed for the model of `Carmon2019Unlabeled`
+                state_dict = rm_substr_from_state_dict(checkpoint['state_dict'],
+                                                    'module.')
+                # needed for the model of `Chen2020Efficient`
+                state_dict = rm_substr_from_state_dict(state_dict,
+                                                    'model.')
+            except:
+                state_dict = rm_substr_from_state_dict(checkpoint, 'module.')
+                state_dict = rm_substr_from_state_dict(state_dict, 'model.')
+
+            if dataset_ == BenchmarkDataset.imagenet:
+                # so far all models need input normalization, which is added as extra layer
+                state_dict = add_substr_to_state_dict(state_dict, 'model.')
             
-        if 'Kireev2021Effectiveness' in model_name or model_name == 'Andriushchenko2020Understanding':
-            checkpoint = checkpoint['last']  # we take the last model (choices: 'last', 'best')
-        try:
-            # needed for the model of `Carmon2019Unlabeled`
-            state_dict = rm_substr_from_state_dict(checkpoint['state_dict'],
-                                                   'module.')
-            # needed for the model of `Chen2020Efficient`
-            state_dict = rm_substr_from_state_dict(state_dict,
-                                                   'model.')
-        except:
-            state_dict = rm_substr_from_state_dict(checkpoint, 'module.')
-            state_dict = rm_substr_from_state_dict(state_dict, 'model.')
+            model = _safe_load_state_dict(model, model_name, state_dict, dataset_)
 
-        if dataset_ == BenchmarkDataset.imagenet:
-            # so far all models need input normalization, which is added as extra layer
-            state_dict = add_substr_to_state_dict(state_dict, 'model.')
-        
-        model = _safe_load_state_dict(model, model_name, state_dict, dataset_)
-
-        return model.eval()
-
+            return model.eval()
+        else:
+            return model.train()
     # If we have an ensemble of models (e.g., Chen2020Adversarial, Diffenderfer2021Winning_LRR_CARD_Deck)
     else:
         model = models[model_name]['model']()

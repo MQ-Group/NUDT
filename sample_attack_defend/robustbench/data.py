@@ -71,12 +71,14 @@ def _load_dataset(
     for i, (x, y) in enumerate(test_loader):
         x_test.append(x)
         y_test.append(y)
-        if n_examples is not None and batch_size * i >= n_examples:
+        # if n_examples is not None and batch_size * i >= n_examples:
+        if n_examples > 0 and batch_size * i >= n_examples:
             break
     x_test_tensor = torch.cat(x_test)
     y_test_tensor = torch.cat(y_test)
 
-    if n_examples is not None:
+    # if n_examples is not None:
+    if n_examples > 0:
         x_test_tensor = x_test_tensor[:n_examples]
         y_test_tensor = y_test_tensor[:n_examples]
 

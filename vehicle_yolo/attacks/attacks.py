@@ -38,6 +38,9 @@ class attacks:
             self.model = DetectionModel(cfg=self.cfg.model, ch=3, nc=self.args.nc, verbose=self.cfg.verbose)
             # print(self.model)
             ckpt, file = torch_safe_load(self.cfg.pretrained)
+            # print(ckpt.keys())
+            # print(file)
+            # print(self.cfg.pretrained)
             self.model.load(weights=ckpt["model"])
             sse_model_loaded(model_name=self.args.model_name, weight_path=self.cfg.pretrained)
             # for param in self.model.parameters():
@@ -140,6 +143,7 @@ class attacks:
         im = im.half() if self.cfg.half else im.float()  # uint8 to fp16/32
         if not_tensor:
             im /= 255  # 0 - 255 to 0.0 - 1.0
+            
         return im
     
     def run_adv(self):
@@ -191,7 +195,7 @@ class attacks:
 ###################################################################################################################################################
     
 
-    def pgd(self, batch, eps=8 / 255, alpha=2 / 255, steps=10, random_start=True, loss_function='cross_entropy'):
+    def pgd(self, batch, eps=8 / 255, alpha=2 / 255, steps=10, random_start=False, loss_function='cross_entropy'):
         '''
         PGD in the paper 'Towards Deep Learning Models Resistant to Adversarial Attacks'
         [https://arxiv.org/abs/1706.06083]
@@ -238,11 +242,10 @@ class attacks:
             
             # Update adversarial images
             grad = torch.autograd.grad(loss, adv_images, retain_graph=False, create_graph=False)[0]
-            
             adv_images = adv_images.detach() + alpha * grad.sign()
             delta = torch.clamp(adv_images - images, min=-eps, max=eps)
             adv_images = torch.clamp(images + delta, min=0, max=1).detach()
-
+            
         return adv_images
     
     
@@ -278,12 +281,15 @@ class attacks:
             loss, loss_items = loss_fn(preds, batch) # loss[0]: box, loss[1]: cls, loss[2]: df1
             # loss = loss.sum()
             loss = loss[1]
-            
+                       
         images = batch['img']
+        print(images[0,0,0,0])
         # Update adversarial images
         grad = torch.autograd.grad(loss, images, retain_graph=False, create_graph=False)[0]
         adv_images = images + eps * grad.sign()
+        print(adv_images[0,0,0,0])
         adv_images = torch.clamp(adv_images, min=0, max=1).detach()
+        print(adv_images[0,0,0,0])
 
         return adv_images
     
