@@ -40,9 +40,9 @@
 * `detection_threshold`（float 选填，默认为`0.5`）：样本检测阈值，样本检测方法结果若大于该值表示检测样本为对抗样本，`process`为`detect`时有效。
 
 ### 说明
--- `process`为`adv`，使用原始cifar10数据集，生成对抗样本保存为.dat文件做为对抗样本数据集，其中也包含原始样本
--- `process`为`attack`，只能使用生成对抗样本数据集
--- `process`为`defend`，只能使用原始cifar10数据集
+-- `process`为`adv`，使用原始cifar10数据集，生成对抗样本保存为.dat文件做为对抗样本数据集，其中也包含原始样本 \
+-- `process`为`attack`，只能使用生成对抗样本数据集 \
+-- `process`为`defend`，只能使用原始cifar10数据集 \
 -- `process`为`detect`，只能使用原始cifar10数据集
 
 ### 攻击防御检测方法的有效参数
