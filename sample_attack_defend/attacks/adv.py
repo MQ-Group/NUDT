@@ -97,14 +97,13 @@ def adv(args):
         elif args.attack_method == 'jitter':
             atk = Jitter(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
         elif args.attack_method == 'boundary':
-            atk = Boundary(model, max_queries=20, init_epsilon=0.1, spherical_step=0.01, orthogonal_step=0.01, binary_search_steps=10)
+            atk = Boundary(model, max_queries=args.max_queries, init_epsilon=args.epsilon, spherical_step=0.01, orthogonal_step=args.step_size, binary_search_steps=args.binary_search_steps)
         elif args.attack_method == 'zoo':
-            atk = ZOO(model, max_iterations=1,learning_rate=0.01, binary_search_steps=5, init_const=0.01, beta=0.001, batch_size=128, resolution=1, early_stop_iters=10, abort_early=True)
+            atk = ZOO(model, max_iterations=args.max_iterations, learning_rate=args.lr, binary_search_steps=args.binary_search_steps, init_const=0.01, beta=0.001, batch_size=128, resolution=1, early_stop_iters=10, abort_early=True)
         elif args.attack_method == 'hsja':
-            atk = HSJA(model, max_queries=1, norm='L2', gamma=0.01, init_num_evals=100, max_num_evals=10000, stepsize_search='geometric_progression', num_iterations=64, constraint='L2', batch_size=128)
+            atk = HSJA(model, max_queries=args.max_queries, norm=args.norm, gamma=0.01, init_num_evals=10, max_num_evals=10, stepsize_search='geometric_progression', num_iterations=args.max_iterations, constraint='L2', batch_size=128)
         elif args.attack_method == 'nes':
-            atk = NES(model, max_queries=1, epsilon=8/255, learning_rate=0.01, samples_per_draw=100, sigma=0.001, decay_factor=0.9, norm='Linf', early_stop=True, loss_func='cross_entropy')
-            
+            atk = NES(model, max_queries=args.max_queries, epsilon=args.epsilon, learning_rate=args.lr, samples_per_draw=10, sigma=0.001, decay_factor=0.9, norm=args.norm, early_stop=True, loss_func='cross_entropy')
         elif args.attack_method == 'yopo':
             atk = YOPO(model, eps=args.epsilon)
         elif args.attack_method == 'pgdrs':

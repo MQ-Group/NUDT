@@ -38,6 +38,9 @@
 * `bit_depth`（int 选填，默认为`4`）：比特深度。
 * `k_nearest`（int 选填，默认为`20`）：`process`为`detect`且`detect_method`为`local_intrinsic_dimensionality`时有效，注意该值不能大于`selected_samples`。
 * `detection_threshold`（float 选填，默认为`0.5`）：样本检测阈值，样本检测方法结果若大于该值表示检测样本为对抗样本，`process`为`detect`时有效。
+* `max_queries`（int 选填，默认为10）：最大查询次数，即攻击向模型发送的最大查询数限制。
+* `binary_search_steps`（int 选填，默认均为10）：二分搜索的迭代次数，用于调整约束参数。
+* `norm`（str 选填，HSJA默认为L2，NES默认为Linf）：距离度量范数，支持枚举值：`L2`、`Linf`。
 
 ### 说明
 -- `process`为`adv`，使用原始cifar10数据集，生成对抗样本保存为.dat文件做为对抗样本数据集，其中也包含原始样本 \
