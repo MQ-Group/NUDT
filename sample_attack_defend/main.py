@@ -97,10 +97,10 @@ def add_args(args):
     # print(data_name)
     args.data_yaml = data_yaml
     args.data_name = data_name
-    if args.process in ['adv', 'defend', 'adv_attack', 'detect']:
-        data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
-    elif args.process == 'attack':
+    if args.process == 'attack':
         data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
+    else:
+        data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
     args.data_path = data_path
     
     return args

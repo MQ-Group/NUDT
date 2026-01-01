@@ -1,0 +1,24 @@
+#data
+dataset: cifar10
+data_path: /data6/user23215430/datasets/cifar10
+download: False
+train: True
+
+#model configuration
+model: BadNet
+input_channels: 3
+output_classes: 10
+checkpoint: 
+
+#training
+epoch: 20
+batch_size: 256
+num_workers: 16
+loss_fun: cross_entropy
+optimizer: sgd
+weight_decay: 0
+lr: 0.01
+# lr_scheduler: StepLR
+# lr_decay_step: 20
+# lr_decay_rate: 0.1
+# lr_decay_min_lr: 1e-5

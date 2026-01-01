@@ -1,0 +1,35 @@
+train: True
+test: False
+validate: False
+predict: False
+
+dataset: casia_web_face
+data_path: /amax/storage/nfs/wangmeiqi/NUDT/dataset/casia_web_face/data
+parquet_glob: train-*.parquet
+image_field: image
+label_field: label
+path_field: path
+
+model: ArcFace
+input_channels: 1
+input_height: 128
+input_width: 128
+output_classes: 10575
+
+optimizer: sgd
+lr: 0.1
+weight_decay: 5.0e-4
+lr_scheduler: steplr
+lr_decay_step: 10
+lr_decay_rate: 0.1
+epoch: 50
+batch_size: 256
+num_workers: 8
+
+loss_fun: cross_entropy
+
+download: False
+checkpoint: null
+log_dir: /amax/storage/nfs/wangmeiqi/NUDT_pytorch_lightning/lightning_logs
+
+
