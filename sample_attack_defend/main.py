@@ -47,7 +47,7 @@ def parse_args():
     
     parser.add_argument('--max_queries', type=int, default=10, help='max queries for attack method')
     parser.add_argument('--binary_search_steps', type=int, default=10, help='binary search steps for attack method')
-    parser.add_argument('--norm', type=str, default='guassian', choices=['L2', 'Linf'], help='norm for attack method')
+    parser.add_argument('--norm', type=str, default='L2', choices=['L2', 'Linf'], help='norm for attack method')
 
     # defend method
     parser.add_argument('--noise_type', type=str, default='guassian', choices=['guassian', 'uniform'], help='pgdrs parameter for defend method')
