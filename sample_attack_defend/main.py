@@ -44,8 +44,11 @@ def parse_args():
     
     parser.add_argument('--std', type=float, default=0.1, help='standard deviation for gn and jitter attack method')
     parser.add_argument('--scale', type=int, default=10, help='scale for jitter attack method')
-    parser.add_argument('--max_queries', type=int, default=10, help='scale for jitter attack method')
     
+    parser.add_argument('--max_queries', type=int, default=10, help='max queries for attack method')
+    parser.add_argument('--binary_search_steps', type=int, default=10, help='binary search steps for attack method')
+    parser.add_argument('--norm', type=str, default='guassian', choices=['L2', 'Linf'], help='norm for attack method')
+
     # defend method
     parser.add_argument('--noise_type', type=str, default='guassian', choices=['guassian', 'uniform'], help='pgdrs parameter for defend method')
     parser.add_argument('--noise_sd', type=float, default=0.5, help='pgdrs parameter noise standard deviation for defend method')
