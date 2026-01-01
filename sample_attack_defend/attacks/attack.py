@@ -112,8 +112,7 @@ def attack(args):
     event = "attack_init"
     data = {
         "status": "success",
-        "message": "攻击初始化完成.",
-        "attack_method": args.attack_method
+        "message": "攻击初始化完成."
     }
     sse_print(event, data)
     
@@ -181,7 +180,6 @@ def attack(args):
         "progress": 100,
         "log": f"[100%] 攻击推理执行完成.",
         "details": {
-            "attack_method": args.attack_method,
             "original_samples": ori_images_flod,
             "adversarial_samples": adv_images_flod,
             "summary": {
