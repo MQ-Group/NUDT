@@ -7,7 +7,7 @@
 ## 环境变量：
 * `input_path`（str 必填）: 指定输入路径，在此路径下有权重文件和数据集文件。
 * `output_path`（str 必填）: 指定输出路径，在此路径下保存生成的对抗样本和防御训练的权重。
-* `process`（str 必填）: 指定进程名称，支持枚举值:`adv`, `attack`, `defend`, `detect`~~, `test`, `sample`~~。
+* `process`（str 必填）: 指定进程名称，支持枚举值:`adv`, `attack`, `adv_attack`, `defend`, `detect`~~, `test`, `sample`~~。
 * ~~`model`（str 必填）: 指定模型名称，支持枚举值:`yolov5`, `yolov8`, `yolov10` 。~~
 * ~~`data`（str 必填）: 指定数据集，支持枚举值:`kitti`, `bdd100k`, `ua-detrac`, `dawn`, `special_vehicle`, `flir_adas`。~~
 * ~~`class_number`（int 必填）: 指定目标类别数量，与数据集绑定，对于kitti数据集为`8` 。~~

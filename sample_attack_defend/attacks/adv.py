@@ -165,6 +165,8 @@ def adv(args):
         }
         sse_print(event, data)
 
+    os.system(f"cp {args.data_yaml} {args.output_path}")
+    
     event = "final_result"
     data = {
         "status": "success",
