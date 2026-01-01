@@ -15,7 +15,7 @@ from robustbench.utils import load_model, clean_accuracy
 
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool, PGDRS
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter, Boundary, ZOO, HSJA, NES, PGDRS
 from torchdefends import YOPO, TRADES, FREE, FAST
 from attacks.utils import imshow, get_pred
 from torchvision import transforms
@@ -109,6 +109,7 @@ def defend(args):
             atk = FREE(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
         elif args.defend_method == 'fast':
             atk = FAST(model, eps=args.epsilon)
+            
         elif args.defend_method == 'fgsm':
             atk = FGSM(model, eps=args.epsilon)
         elif args.defend_method == 'pgd':
@@ -122,7 +123,16 @@ def defend(args):
         elif args.defend_method == 'GN':
             atk = DeepFool(model, std=args.std)
         elif args.defend_method == 'jitter':
-            atk = Jitter(eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
+            atk = Jitter(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
+        elif args.defend_method == 'boundary':
+            atk = Boundary(model, max_queries=1, init_epsilon=0.1, spherical_step=0.01, orthogonal_step=0.01, binary_search_steps=10)
+        elif args.defend_method == 'zoo':
+            atk = ZOO(model, max_iterations=1,learning_rate=0.01, binary_search_steps=5, init_const=0.01, beta=0.001, batch_size=128, resolution=1, early_stop_iters=10, abort_early=True)
+        elif args.defend_method == 'hsja':
+            atk = HSJA(model, max_queries=1, norm='L2', gamma=0.01, init_num_evals=100, max_num_evals=10000, stepsize_search='geometric_progression', num_iterations=64, constraint='L2', batch_size=128)
+        elif args.defend_method == 'nes':
+            atk = NES(model, max_queries=1, epsilon=8/255, learning_rate=0.01, samples_per_draw=100, sigma=0.001, decay_factor=0.9, norm='Linf', early_stop=True, loss_func='cross_entropy')
+            
         else:
             raise ValueError('不支持的攻击方法.')
 
@@ -203,6 +213,7 @@ def defend(args):
         "progress": 100,
         "log": f"[100%] 防御训练执行完成.",
         "details": {
+            "defend_method": args.defend_method,
             "loss": f"{current_loss:.4f}", 
             "accuracy": f"{current_acc:.2f}%"
         }

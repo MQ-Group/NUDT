@@ -50,21 +50,24 @@ ss == spatial_smoothing \
 fs == feature_squeezing \
 lid = local_intrinsic_dimensionality
 
-|                       | fgsm | pgd | bim | cw | deepfool | gn | jitter | yopo | pgdrs | trades | free | fast | ss | fs | lid |
-|---                    |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| epsilon               | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
-| step_size             |  | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |  |
-| max_iterations        |  | 1 | 1 | 1 |  |  |  |  |  |  |  |  |  |  |  |
-| random_start          |  | 1 |  |  |  |  |  |  |  |  |  |  |  |  |  |
-| lr                    |  |  |  | 1 |  |  |  |  |  |  |  |  |  |  |  |
-| scale                 |  |  |  |  |  |  | 1 |  |  |  |  |  |  |  |  |
-| std                   |  |  |  |  |  | 1 | 1 |  |  |  |  |  |  |  |  |
-| noise_type            |  |  |  |  |  |  |  |  | 1 |  |  |  |  |  |  |
-| noise_sd              |  |  |  |  |  |  |  |  | 1 |  |  |  |  |  |  |
-| kernel_size           |  |  |  |  |  |  |  |  |  |  |  |  | 1 | 1 |  |
-| bit_depth             |  |  |  |  |  |  |  |  |  |  |  |  |  | 1 |  |
-| k_nearest             |  |  |  |  |  |  |  |  |  |  |  |  |  |  | 1 |
-| detection_threshold   |  |  |  |  |  |  |  |  |  |  |  |  | 1 | 1 | 1 |
+| 参数 | fgsm | pgd | bim | cw | deepfool | gn | jitter | boundary | zoo | hsja | nes | yopo | pgdrs | trades | free | fast | ss | fs | lid |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| epsilon | 1 | 1 | 1 | | | | 1 | 1 | | | 1 | 1 | 1 | 1 | 1 | 1 | | | |
+| step_size | | 1 | 1 | | | | 1 | 1 | | | | | 1 | 1 | 1 | | | | |
+| max_iterations | | 1 | 1 | 1 | 1 | | 1 | | 1 | 1 | | | 1 | 1 | 1 | | | | |
+| random_start | | 1 | | | | | 1 | | | | | | | | | | | | |
+| lr | | | | 1 | | | | | 1 | | 1 | | | | | | | | |
+| std | | | | | | 1 | 1 | | | | | | | | | | | | |
+| scale | | | | | | | 1 | | | | | | | | | | | | |
+| max_queries | | | | | | | | 1 | | 1 | 1 | | | | | | | | |
+| binary_search_steps | | | | | | | | 1 | 1 | | | | | | | | | | |
+| norm | | | | | | | | | | 1 | 1 | | | | | | | | |
+| noise_type | | | | | | | | | | | | | 1 | | | | | | |
+| noise_sd | | | | | | | | | | | | | 1 | | | | | | |
+| kernel_size | | | | | | | | | | | | | | | | | 1 | 1 | |
+| bit_depth | | | | | | | | | | | | | | | | | | 1 | |
+| k_nearest | | | | | | | | | | | | | | | | | | | 1 |
+| detection_threshold | | | | | | | | | | | | | | | | | 1 | 1 | 1 |
 
 
 ## 快速开始

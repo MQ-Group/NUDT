@@ -13,10 +13,14 @@ from robustbench.utils import load_model, clean_accuracy
 
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter, Boundary, ZOO, HSJA, NES
 from torchdefends import YOPO, TRADES, FREE, FAST
 from .utils import imshow, get_pred
 from torchvision import transforms
+
+from PIL import Image
+import glob
+import numpy as np
 
 from utils.sse import sse_print
 
@@ -32,11 +36,50 @@ def attack(args):
         else:
             raise ValueError('数据集不支持, 仅支持数据集: cifar10, cifar100.')
         
+        ori_images_flod = f"{args.data_path}ori_images"
+        adv_images_flod = f"{args.data_path}adv_images"
+        
+        ori_image_paths = glob.glob(os.path.join(ori_images_flod, '*.jpg'))
+        adv_image_paths = glob.glob(os.path.join(adv_images_flod, '*.jpg'))
+        
+        ori_images = []
+        adv_images = []
+        labels = []
+        transform = transforms.Compose([
+            transforms.ToTensor()
+        ])
+        for ori_image_path in ori_image_paths:
+            # print(ori_image_path)
+            ori_image = Image.open(ori_image_path)
+            ori_image = transform(ori_image)
+            ori_images.append(ori_image)
+            
+            # print(os.path.basename(ori_image_path))
+            # print(os.path.splitext(os.path.basename(ori_image_path)))
+            # print(os.path.splitext(os.path.basename(ori_image_path))[0].split('_'))
+            label = int(os.path.splitext(os.path.basename(ori_image_path))[0].split('_')[-1])
+            # print(label)
+            labels.append(label)
+            
+        for adv_image_path in adv_image_paths:
+            adv_image = Image.open(adv_image_path)
+            adv_image = transform(adv_image)
+            adv_images.append(adv_image)
+                    
+        ori_images = torch.stack(ori_images, dim=0)
+        adv_images = torch.stack(adv_images, dim=0)
+        labels = torch.Tensor(labels)
+        
+        # print(ori_images.shape)
+        # print(labels.shape)
+        # print(adv_images.shape)
+        
         event = "data_load_validated"
         data = {
             "status": "success",
             "message": "数据集加载完毕.",
             "data name": args.data_name,
+            "samples number": adv_images.shape[0],
             "data path": args.data_path
         }
         sse_print(event, data)
@@ -66,55 +109,95 @@ def attack(args):
         norm='Linf'
         ).to(device)
     
-    
-    
-    try:
-        # print(args.attack_method)
-        if args.attack_method == 'fgsm':
-            atk = FGSM(model, eps=args.epsilon)
-        elif args.attack_method == 'pgd':
-            atk = PGD(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
-        elif args.attack_method == 'bim':
-            atk = BIM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
-        elif args.attack_method == 'cw':
-            atk = CW(model, c=1, kappa=0, steps=args.max_iterations, lr=args.lr)
-        elif args.attack_method == 'deepfool':
-            atk = DeepFool(model, steps=args.max_iterations, overshoot=0.02)
-        elif args.attack_method == 'GN':
-            atk = DeepFool(model, std=args.std)
-        elif args.attack_method == 'jitter':
-            atk = Jitter(eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
-        elif args.attack_method == 'yopo':
-            atk = YOPO(model, eps=args.epsilon)
-        elif args.attack_method == 'pgdrs':
-            atk = PGDRS(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, noise_type=args.noise_type, noise_sd=args.noise_sd, noise_batch_size=5, batch_max=2048)
-        elif args.attack_method == 'trades':
-            atk = TRADES(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
-        elif args.attack_method == 'free':
-            atk = FREE(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations)
-        elif args.attack_method == 'fast':
-            atk = FAST(model, eps=args.epsilon)
-        else:
-            raise ValueError('不支持的攻击方法.')
-
-        event = "attack_init"
-        data = {
-            "status": "success",
-            "message": "攻击初始化完成.",
-            "attack_method": args.attack_method
-        }
-        sse_print(event, data)
-    except Exception as e:
-        event = "attack_init"
-        data = {
-            "status": "failure",
-            "message": f"{e}",
-            "attack_method": args.attack_method
-        }
-        sse_print(event, data)
+    event = "attack_init"
+    data = {
+        "status": "success",
+        "message": "攻击初始化完成.",
+        "attack_method": args.attack_method
+    }
+    sse_print(event, data)
     
     # print(atk)
     
+    total_iamges = ori_images.shape[0]
+    ori_acc_sum = 0.0
+    adv_acc_sum = 0.0
+    attack_success_count = 0
+    attack_failure_count = 0
+    
+    for i in range(total_iamges):
+        ori_acc = clean_accuracy(model, ori_images[i:i+1].to(device), labels[i:i+1].to(device))
+        adv_acc = clean_accuracy(model, adv_images[i:i+1].to(device), labels[i:i+1].to(device))
+        # print('Acc: %2.2f %%'%(ori_acc*100))
+        # print('Acc: %2.2f %%'%(adv_acc*100))
+        ori_acc_sum += ori_acc*100
+        adv_acc_sum += adv_acc*100
+        
+        ori_pred_cls = get_pred(model, ori_images[i:i+1], device)
+        adv_pred_cls = get_pred(model, adv_images[i:i+1], device)
+        # print(ori_pred_cls)
+        # print(adv_pred_cls)
+        
+        if ori_pred_cls != adv_pred_cls:
+            # attack_result = '成功'
+            attack_result = 'success'
+            attack_success_count += 1
+        else:
+            # attack_result = '失败'
+            attack_result = 'failure'
+            attack_failure_count += 1
+            
+
+        ori_img_path = ori_image_paths[i]
+        adv_img_path = adv_image_paths[i]
+        
+        event = "attack_inference"
+        data = {
+            "message": "正在执行攻击推理...",
+            "progress": int(i/total_iamges*100),
+            # "log": f"[{int(i/total_iamges*100)}%] 正在执行攻击推理... 原始样本: {ori_img_path}, 原始样本预测准确率: {ori_acc*100:.2f}%, 原始样本预测类别: {ori_pred_cls.item()}, 对抗样本: {adv_img_path}, 对抗样本预测准确率: {adv_acc*100:.2f}%, 对抗样本预测类别: {ori_pred_cls.item()}, 原始样本实际类别: {labels[i].item()}, 攻击结果: {attack_result}"
+            "log": f"[{int(i/total_iamges*100)}%] 正在执行攻击推理...",
+            "details": {
+                "original_sample": {
+                    "accuracy": f"{ori_acc*100:.2f}%",
+                    "predict_class": ori_pred_cls.item(),
+                    "file_path": ori_img_path
+                },
+                "adversarial_sample": {
+                    "accuracy": f"{adv_acc*100:.2f}%",
+                    "predict_class": adv_pred_cls.item(),
+                    "file_path": adv_img_path
+                },
+                "actual_class": labels[i].item(),
+                "attack_result": attack_result
+            }
+        }
+        sse_print(event, data)
+    
+
+    event = "final_result"
+    data = {
+        "message": "攻击推理执行完成.",
+        "progress": 100,
+        "log": f"[100%] 攻击推理执行完成.",
+        "details": {
+            "attack_method": args.attack_method,
+            "original_samples": ori_images_flod,
+            "adversarial_samples": adv_images_flod,
+            "summary": {
+                "total_iamges": total_iamges,
+                "task_success_count": attack_success_count,
+                "task_failure_count": attack_failure_count,
+                "original_samples_accuracy": f"{ori_acc_sum/total_iamges:.2f}%",
+                "adversarial_samples_accuracy": f"{adv_acc_sum/total_iamges:.2f}%"
+            }
+        }
+    }
+    sse_print(event, data)
+
+
+    
+    '''
     ori_adv_loader = atk.load(
         load_path=args.data_path,
         batch_size=1,
@@ -212,4 +295,4 @@ def attack(args):
         }
     }
     sse_print(event, data)
-
+    '''

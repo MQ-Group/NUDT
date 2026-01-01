@@ -20,10 +20,8 @@ from torchvision import transforms
 
 from utils.sse import sse_print
 
-
-def adv(args):
+def adv_attack(args):
     device = args.device
-    
     try:
         # print(args.data_name)
         if args.data_name == 'cifar10':
@@ -99,7 +97,7 @@ def adv(args):
         elif args.attack_method == 'boundary':
             atk = Boundary(model, max_queries=20, init_epsilon=0.1, spherical_step=0.01, orthogonal_step=0.01, binary_search_steps=10)
         elif args.attack_method == 'zoo':
-            atk = ZOO(model, max_iterations=1,learning_rate=0.01, binary_search_steps=5, init_const=0.01, beta=0.001, batch_size=128, resolution=1, early_stop_iters=10, abort_early=True)
+            atk = ZOO(model, max_iterations=1, learning_rate=0.01, binary_search_steps=1, init_const=0.01, beta=0.001, batch_size=128, resolution=1, early_stop_iters=5, abort_early=True)
         elif args.attack_method == 'hsja':
             atk = HSJA(model, max_queries=1, norm='L2', gamma=0.01, init_num_evals=100, max_num_evals=10000, stepsize_search='geometric_progression', num_iterations=64, constraint='L2', batch_size=128)
         elif args.attack_method == 'nes':
@@ -118,15 +116,15 @@ def adv(args):
         else:
             raise ValueError('不支持的攻击方法.')
 
-        event = "adversarial_samples_generation_init"
+        event = "adversarial_samples_generation_and_attack_init"
         data = {
             "status": "success",
-            "message": "对抗样本生成初始化完成.",
+            "message": "攻击初始化完成.",
             "attack_method": args.attack_method
         }
         sse_print(event, data)
     except Exception as e:
-        event = "adversarial_samples_generation_init"
+        event = "adversarial_samples_generation_and_attack_init"
         data = {
             "status": "failure",
             "message": f"{e}",
@@ -145,12 +143,37 @@ def adv(args):
     os.makedirs(adv_images_flod, exist_ok=True)
     
     total_iamges = images.shape[0]
-    event = "adversarial_samples_generation_run"
+    ori_acc_sum = 0.0
+    adv_acc_sum = 0.0
+    attack_success_count = 0
+    attack_failure_count = 0
+    
     for i in range(total_iamges):
         adv_images = atk(images[i:i+1], labels[i:i+1])
         
-        ori_img_save_path = f"{ori_images_flod}/ori_img_{i}_cls_{labels[i].item()}.jpg"
-        adv_img_save_path = f"{adv_images_flod}/adv_img_{i}_cls_{labels[i].item()}.jpg"
+        ori_acc = clean_accuracy(model, images[i:i+1].to(device), labels[i:i+1].to(device))
+        adv_acc = clean_accuracy(model, adv_images.to(device), labels[i:i+1].to(device))
+        # print('Acc: %2.2f %%'%(ori_acc*100))
+        # print('Acc: %2.2f %%'%(adv_acc*100))
+        ori_acc_sum += ori_acc*100
+        adv_acc_sum += adv_acc*100
+        
+        ori_pred_cls = get_pred(model, images[i:i+1], device)
+        adv_pred_cls = get_pred(model, adv_images, device)
+        # print(ori_pred_cls)
+        # print(adv_pred_cls)
+        
+        if ori_pred_cls != adv_pred_cls:
+            # attack_result = '成功'
+            attack_result = 'success'
+            attack_success_count += 1
+        else:
+            # attack_result = '失败'
+            attack_result = 'failure'
+            attack_failure_count += 1
+            
+        ori_img_save_path = f"{ori_images_flod}/ori_img_{i}_cls_{labels[i].item()}_pred_{ori_pred_cls.item()}.jpg"
+        adv_img_save_path = f"{adv_images_flod}/adv_img_{i}_cls_{labels[i].item()}_pred_{adv_pred_cls.item()}.jpg"
         
         to_pil = transforms.ToPILImage()
         pil_image = to_pil(images[i])
@@ -158,61 +181,46 @@ def adv(args):
         pil_image.save(ori_img_save_path)
         pil_image.save(adv_img_save_path)
         
+        event = "attack_inference"
         data = {
-            "status": "success",
-            "message": "生成对抗样本...",
+            "message": "正在生成对抗样本并执行攻击...",
             "progress": int(i/total_iamges*100),
-            "log": f"[{int(i/total_iamges*100)}%] 正在生成第{i}张对抗样本, 总共需要生成{total_iamges}张."
+            # "log": f"[{int(i/total_iamges*100)}%] 正在生成对抗样本并执行攻击... 原始样本: {ori_img_save_path}, 原始样本预测准确率: {ori_acc*100:.2f}%, 原始样本预测类别: {ori_pred_cls.item()}, 对抗样本: {adv_img_save_path}, 对抗样本预测准确率: {adv_acc*100:.2f}%, 对抗样本预测类别: {ori_pred_cls.item()}, 原始样本实际类别: {labels[i].item()}, 攻击结果: {attack_result}"
+            "log": f"[{int(i/total_iamges*100)}%] 正在生成对抗样本并执行攻击...",
+            "details": {
+                "original_sample": {
+                    "accuracy": f"{ori_acc*100:.2f}%",
+                    "predict_class": ori_pred_cls.item(),
+                    "file_path": ori_img_save_path
+                },
+                "adversarial_sample": {
+                    "accuracy": f"{adv_acc*100:.2f}%",
+                    "predict_class": adv_pred_cls.item(),
+                    "file_path": adv_img_save_path
+                },
+                "actual_class": labels[i].item(),
+                "attack_result": attack_result
+            }
         }
         sse_print(event, data)
-
+    
     event = "final_result"
     data = {
-        "status": "success",
-        "message": "对抗样本生成完成",
+        "message": "生成对抗样本并执行攻击完成.",
         "progress": 100,
-        "log": f"[100%] 对抗样本生成完成, 共生成{total_iamges}张.",
-        "attack_method": args.attack_method,
-        "original_samples": ori_images_flod,
-        "adversarial_samples": adv_images_flod
+        "log": f"[100%] 生成对抗样本并执行攻击完成.",
+        "details": {
+            "attack_method": args.attack_method,
+            "original_samples": ori_images_flod,
+            "adversarial_samples": adv_images_flod,
+            "summary": {
+                "total_iamges": total_iamges,
+                "task_success_count": attack_success_count,
+                "task_failure_count": attack_failure_count,
+                "original_samples_accuracy": f"{ori_acc_sum/total_iamges:.2f}%",
+                "adversarial_samples_accuracy": f"{adv_acc_sum/total_iamges:.2f}%"
+            }
+        }
     }
     sse_print(event, data)
-
-
     
-    # adv_data_name = f"adv_{args.data_name}.dat"
-    # adv_data_path = f"{args.output_path}/{adv_data_name}"
-    '''
-    save_path (str): save_path.
-    data_loader (torch.utils.data.DataLoader): data loader.
-    verbose (bool): True for displaying detailed information. (Default: True)
-    return_verbose (bool): True for returning detailed information. (Default: False)
-    save_predictions (bool): True for saving predicted labels (Default: False)
-    save_clean_inputs (bool): True for saving clean inputs (Default: False)
-    '''
-    # atk.save(
-    #     data_loader=[(images, labels)], # 在这里面会执行攻击，所以用原始数据
-    #     save_path=adv_data_path,
-    #     verbose=False,
-    #     return_verbose=False,
-    #     save_predictions=False,
-    #     save_clean_inputs=True,
-    #     )
-    # os.system(f"cp {args.data_yaml} {args.output_path}")
-    
-    # event = "final_result"
-    # data = {
-    #     "status": "success",
-    #     "message": "对抗样本生成完成",
-    #     "progress": 100,
-    #     "log": f"[100%] 对抗样本生成完成, 共生成{total_iamges}张.",
-    #     "attack_method": args.attack_method,
-    #     "data_name": adv_data_name,
-    #     "data_path": adv_data_path
-    # }
-    # sse_print(event, data)
-    
-    
-    
-
-

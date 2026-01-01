@@ -280,7 +280,7 @@ class Attack(object):
 
         total_batch = len(data_loader)
         given_training = self.model.training
-
+        
         for step, (inputs, labels) in enumerate(data_loader):
             start = time.time()
             adv_inputs = self.__call__(inputs, labels)

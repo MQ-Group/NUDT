@@ -1,11 +1,11 @@
 task: detect
-mode: predict
+mode: validate
 model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
 imgsz: 640
 epochs: 100
 batch: 1
-device: cpu
+device: -1
 workers: 0
 pretrained: ./input/model/yolov8/yolov8.pt
 resume: false
@@ -104,8 +104,8 @@ auto_augment: randaugment
 erasing: 0.4
 cfg: null
 tracker: botsort.yaml
-process: adv
-attack_method: fsgm
+process: attack
+attack_method: fgsm
 defend_method: scale
 epsilon: 0.03137254901960784
 step_size: 0.00784313725490196

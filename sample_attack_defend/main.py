@@ -7,6 +7,7 @@ import glob
 from utils.sse import sse_input_path_validated, sse_output_path_validated
 from utils.yaml_rw import load_yaml, save_yaml
 from attacks.attack import attack
+from attacks.adv_attack import adv_attack
 from attacks.adv import adv
 from defends.defend import defend
 from detects.detect import detect
@@ -17,14 +18,14 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='./input', help='input path')
     parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack', 'defend', 'detect'], help='process name')
+    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack', 'adv_attack', 'defend', 'detect'], help='process name')
     # parser.add_argument('--process', type=str, default='attack', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
     # parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
     # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
     # parser.add_argument('--class_number', type=int, default=8, choices=[8, 10, 4, 1, 1000], help='number of class. 8 for kitti, 10 for bdd100k, 4 for ua-detrac, 5 for special_vehicle, 1 for dawn, 1 for flir_adas')
     
-    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'yopo', 'pgdrs', 'trades', 'free', 'fast'], help='attack method')
-    parser.add_argument('--defend_method', type=str, default='yopo', choices=['yopo', 'pgdrs', 'trades', 'free', 'fast', 'fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter'], help='defend method')
+    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'boundary', 'zoo', 'hsja', 'nes', 'yopo', 'pgdrs', 'trades', 'free', 'fast'], help='attack method')
+    parser.add_argument('--defend_method', type=str, default='yopo', choices=['yopo', 'pgdrs', 'trades', 'free', 'fast', 'fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'boundary', 'zoo', 'hsja', 'nes'], help='defend method')
     parser.add_argument('--detect_method', type=str, default='spatial_smoothing', choices=['spatial_smoothing', 'feature_squeezing', 'local_intrinsic_dimensionality'], help='detect method')
     
     parser.add_argument('--epochs', type=int, default=1, help='epochs')
@@ -43,10 +44,12 @@ def parse_args():
     
     parser.add_argument('--std', type=float, default=0.1, help='standard deviation for gn and jitter attack method')
     parser.add_argument('--scale', type=int, default=10, help='scale for jitter attack method')
+    parser.add_argument('--max_queries', type=int, default=10, help='scale for jitter attack method')
     
+    # defend method
     parser.add_argument('--noise_type', type=str, default='guassian', choices=['guassian', 'uniform'], help='pgdrs parameter for defend method')
     parser.add_argument('--noise_sd', type=float, default=0.5, help='pgdrs parameter noise standard deviation for defend method')
-
+    # detect method
     parser.add_argument('--kernel_size', type=int, default=3, help='ss and fs for detect method')
     parser.add_argument('--bit_depth', type=int, default=4, help='fs for detect method')
     parser.add_argument('--k_nearest', type=int, default=20, help='k_nearest must less than selected_samples lid for detect method')
@@ -91,10 +94,10 @@ def add_args(args):
     # print(data_name)
     args.data_yaml = data_yaml
     args.data_name = data_name
-    if args.process in ['adv', 'defend', 'detect']:
+    if args.process in ['adv', 'defend', 'adv_attack', 'detect']:
         data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
     elif args.process == 'attack':
-        data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.dat'))[0]
+        data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
     args.data_path = data_path
     
     return args
@@ -105,6 +108,8 @@ def main(args):
         adv(args)
     elif args.process == 'attack':
         attack(args)
+    elif args.process == 'adv_attack':
+        adv_attack(args)
     elif args.process == 'defend':
         defend(args)
     elif args.process == 'detect':

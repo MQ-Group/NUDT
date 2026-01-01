@@ -13,7 +13,7 @@ from robustbench.utils import load_model, clean_accuracy
 
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter, Boundary, ZOO, HSJA, NES
 from torchdefends import YOPO, TRADES, FREE, FAST
 from torchdetects import SS, FS, LID
 
@@ -94,9 +94,18 @@ def detect(args):
         elif args.attack_method == 'deepfool':
             atk = DeepFool(model, steps=args.max_iterations, overshoot=0.02)
         elif args.attack_method == 'gn':
-            atk = DeepFool(model, std=args.std)
+            atk = GN(model, std=args.std)
         elif args.attack_method == 'jitter':
-            atk = Jitter(eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
+            atk = Jitter(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
+        elif args.attack_method == 'boundary':
+            atk = Boundary(model, max_queries=1, init_epsilon=0.1, spherical_step=0.01, orthogonal_step=0.01, binary_search_steps=10)
+        elif args.attack_method == 'zoo':
+            atk = ZOO(model, max_iterations=1,learning_rate=0.01, binary_search_steps=5, init_const=0.01, beta=0.001, batch_size=128, resolution=1, early_stop_iters=10, abort_early=True)
+        elif args.attack_method == 'hsja':
+            atk = HSJA(model, max_queries=1, norm='L2', gamma=0.01, init_num_evals=100, max_num_evals=10000, stepsize_search='geometric_progression', num_iterations=64, constraint='L2', batch_size=128)
+        elif args.attack_method == 'nes':
+            atk = NES(model, max_queries=1, epsilon=8/255, learning_rate=0.01, samples_per_draw=100, sigma=0.001, decay_factor=0.9, norm='Linf', early_stop=True, loss_func='cross_entropy')
+            
         elif args.attack_method == 'yopo':
             atk = YOPO(model, eps=args.epsilon)
         elif args.attack_method == 'pgdrs':
@@ -263,6 +272,8 @@ def detect(args):
         "progress": 100,
         "log": f"[100%] 样本检测执行完成.",
         "details": {
+            "attack_method": args.attack_method,
+            "detect_method": args.detect_method,
             "original_samples": ori_images_flod,
             "adversarial_samples": adv_images_flod,
             "summary": {

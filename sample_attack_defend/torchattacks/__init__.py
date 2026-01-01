@@ -2,6 +2,13 @@
 from .attacks.vanila import VANILA
 from .attacks.gn import GN
 
+# BlackBox attacks
+from .attacks.boundary import Boundary
+from .attacks.zoo import ZOO
+from .attacks.hsja import HSJA
+from .attacks.nes import NES
+
+
 # Linf attacks
 from .attacks.fgsm import FGSM
 from .attacks.bim import BIM
