@@ -30,8 +30,9 @@ drone_yolo/input/
 drone_yolo/output/
 sample_attack_defend/input/
 sample_attack_defend/output/
+base_train_optimaze/input/
+base_train_optimaze/output/
 
-base_train/
 drone_recognition/
 
 poisioning/input/

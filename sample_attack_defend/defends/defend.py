@@ -201,8 +201,8 @@ def defend(args):
             sse_print(event, data)
     
     model_weight_save_path = f"{args.output_path}/defend_trained_{args.model_name}.pt"
-    torch.save(model.state_dict(), model_weight_save_path)      
-        
+    torch.save(model.state_dict(), model_weight_save_path)
+    
     os.system(f"cp {args.model_yaml} {args.output_path}")
     
     event = "final_result"
