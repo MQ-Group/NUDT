@@ -110,6 +110,7 @@ def fit(args):
     
         model_weight_save_path = f"{args.output_path}/trained_{args.model_name}.pth"
         torch.save(model.state_dict(), model_weight_save_path)
+        os.system(f"cp {args.model_yaml} {args.output_path}")
         
         # test
         model.eval()
@@ -149,7 +150,7 @@ def fit(args):
             
     
         
-    os.system(f"cp {args.model_yaml} {args.output_path}")
+    
     
     event = "final_result"
     data = {

@@ -20,8 +20,8 @@ def parse_args():
     
     parser.add_argument('--resume_from_checkpoint', type=bool, default=False, help='resume from checkpoint for train or fit')
     
-    parser.add_argument('--epochs', type=int, default=100, help='epochs')
-    parser.add_argument('--batch', type=int, default=16, help='batch size')
+    parser.add_argument('--epochs', type=int, default=10, help='epochs')
+    parser.add_argument('--batch', type=int, default=512, help='batch size')
     parser.add_argument('--device', type=str, default='cpu', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     parser.add_argument('--optimizer', type=str, default='adam', choices=['sgd', 'adam', 'adamw', 'rmsprop', 'adagrad', 'adadelta', 'adamax', 'nadam', 'radam', 'lbfgs', 'sgd_nesterov', 'asgd', 'rprop'], help='optimizer type')

@@ -9,9 +9,7 @@ def get_dataset(data_name, data_path, is_train):
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.1307,), std=(0.3081,))
             ])
-        print(data_path)
         dataset = datasets.MNIST(data_path, train=is_train, download=False, transform=transform)
-        print(dataset)
         num_classes = 10
     elif data_name == 'cifar10':
         transform = transforms.Compose([
