@@ -1,7 +1,7 @@
-# 车辆识别场景
+# 基础模型训练与优化
 
 ## 概述
-本项目基于 adversarial-attacks-pytorch 库实现样本攻击和防御场景。它支持对抗样本生成、攻击评估、防御训练、对抗样本检测。
+本项目支持vgg, resnet, inception, lenet模型的训练与优化，数据集包括cifar10, cifar100, imagenet, mnist(仅lenet模型)。
 
 
 ## 环境变量：
