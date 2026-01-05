@@ -87,9 +87,10 @@ def add_args(args):
     # print(model_name)
     args.model_yaml = model_yaml
     args.model_name = model_name
-    model_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
-    # print(model_path)
-    args.model_path = model_path
+    if args.process != 'defend':
+        model_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
+        # print(model_path)
+        args.model_path = model_path
     
     data_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.yaml'))[0]
     # print(data_yaml)

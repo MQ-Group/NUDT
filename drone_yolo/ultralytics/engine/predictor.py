@@ -329,7 +329,6 @@ class BasePredictor:
                 paths, im0s, s = self.batch
                 # Preprocess
                 with profilers[0]:
-                    print(im0s.shape)
                     im = self.preprocess(im0s)
 
                 # Inference

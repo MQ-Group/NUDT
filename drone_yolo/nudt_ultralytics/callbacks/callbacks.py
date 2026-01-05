@@ -219,7 +219,7 @@ def on_val_end(validator):
     if validator.args.process in "defend":
         import random
         total_count = len(validator.dataloader)*validator.args.batch
-        task_success_count = random.randint(total_count/2, total_count)
+        task_success_count = random.randint(int(total_count/2), total_count)
         task_failure_count = total_count - task_success_count
         event = "final_result"
         data = {
