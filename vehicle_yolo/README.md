@@ -33,19 +33,19 @@
 
 
 ### 攻击防御方法的有效参数
-| 参数 | fgsm | pgd | bim | cw | deepfool | gn | jitter | scale | compression | fgsm_denoise | neural_cleanse | pgd_purifier |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| epsilon | 1 | 1 | 1 | | | | 1 |  |  | 1 |  | 1 |
-| step_size | | 1 | 1 | | | | 1 |  |  |  |  | 1 |
-| max_iterations | | 1 | 1 | 1 | 1 | | 1 |  |  |  |  | 1 |
-| random_start | | 1 | | | | | 1 |  |  |  |  |  |
-| lr | | | | 1 | | | |  |  |  |  |  |
-| std | | | | | | 1 | 1 |  |  |  |  |  |
-| scale | | | | | | | 1 |  |  |  |  |  |
-| scaling_factor |  |  |  |  |  | 1 |  |  |  |  |
-| interpolate_method |  |  |  |  |  | 1 |  |  |  |  |
-| image_quality |  |  |  |  |  |  | 1 |  |  |  |
-| filter_kernel_size |  |  |  |  |  |  |  |  | 1 |  |
+| 参数 | fgsm | pgd | bim | cw | deepfool | gn | jitter | scale | compression | neural_cleanse | pgd_purifier | fgsm_denoise |
+|------|------|-----|-----|----|----------|----|--------|-------|-------------|----------------|--------------|--------------|
+| epsilon | 1 | 1 | 1 | | | | 1 | | | | 1 | 1 |
+| step_size | | 1 | 1 | | | | 1 | | | | 1 | |
+| max_iterations | | 1 | 1 | 1 | 1 | | 1 | | | | 1 | |
+| random_start | | 1 | | | | | 1 | | | | | |
+| lr | | | | 1 | | | | | | | | |
+| std | | | | | | 1 | 1 | | | | | |
+| scale | | | | | | | 1 | | | | | |
+| scaling_factor | | | | | | | | 1 | | | | |
+| interpolate_method | | | | | | | | 1 | | | | |
+| image_quality | | | | | | | | | 1 | | | |
+| filter_kernel_size | | | | | | | | | | 1 | | |
 
 
 ### 说明
