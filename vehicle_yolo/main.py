@@ -6,7 +6,6 @@ import glob
 
 from utils.sse import sse_input_path_validated, sse_output_path_validated
 from utils.yaml_rw import load_yaml, save_yaml
-from nudt_ultralytics.main import main as yolo
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -14,34 +13,35 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='./input', help='input path')
     parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
-    # parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
-    # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
-    # parser.add_argument('--class_number', type=int, default=8, choices=[8, 10, 4, 1, 1000], help='number of class. 8 for kitti, 10 for bdd100k, 4 for ua-detrac, 5 for special_vehicle, 1 for dawn, 1 for flir_adas')
+    parser.add_argument('--process', type=str, default='train', choices=['adv', 'attack', 'defend', 'train', 'test', 'predict', 'sample'], help='process name')
+    # parser.add_argument('--model', type=str, default='drone_yolo', choices=['drone_yolo'], help='model name')
+    # parser.add_argument('--data', type=str, default='yolo_drone_detection', choices=['yolo_drone_detection'], help='data name')
+    # parser.add_argument('--class_number', type=int, default=1, choices=[1, 1000], help='number of class. 1 for yolo_drone_detection, 1000 for imagenet10')
     
-    parser.add_argument('--task', type=str, default='detect', choices=['detect', 'classify'], help='task name. detect for kitti, bdd100k, ua-detrac, special_vehicle, dawn, flir_adas')
-    
-    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['pgd', 'fgsm', 'bim', 'deepfool', 'cw'], help='attack method')
+    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn', 'jitter'], help='attack method')
     parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
     
-    parser.add_argument('--epochs', type=int, default=1, help='epochs')
-    parser.add_argument('--batch', type=int, default=16, help='batch size')
-    # parser.add_argument('--device', type=int, default=0, help='which gpu for cuda')
+    parser.add_argument('--confidence_threshold', type=float, default=0.1, help='confidence threshold')
+    parser.add_argument('--resume_from_checkpoint', type=bool, default=False, help='resume from checkpoint for train or fit')
+    
+    parser.add_argument('--epochs', type=int, default=100, help='epochs')
+    parser.add_argument('--batch', type=int, default=128, help='batch size')
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
-    parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
+    parser.add_argument('--workers', type=int, default=16, help='dataloader workers (per RANK if DDP)')
     
     parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
     
-    parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method and defend medthod')
+    parser.add_argument('--epsilon', type=float, default=15/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method and defend medthod')
     
-    parser.add_argument('--random_start', type=bool, default=False, help='initial random start for attack method')
-    parser.add_argument('--loss_function', type=str, default='cross_entropy', choices=['cross_entropy', 'mse', 'l1', 'binary_cross_entropy'], help='loss function for attack method')
-    parser.add_argument('--optimization_method', type=str, default='adam', choices=['adam', 'sgd'], help='optimization for attack method')
+    parser.add_argument('--random_start', type=bool, default=True, help='initial random start for attack method')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
     
-    parser.add_argument('--scaling_factor', type=float, default=0.9, help='scaling factor (0, 1) for defend method')
+    parser.add_argument('--std', type=float, default=0.1, help='standard deviation for gn and jitter attack method')
+    parser.add_argument('--scale', type=int, default=10, help='scale for jitter attack method')
+    
+    parser.add_argument('--scaling_factor', type=float, default=0.5, help='scaling factor (0, 1) for defend method')
     parser.add_argument('--interpolate_method', type=str, default='bilinear', choices=['bilinear', 'nearest'], help='interpolate method for defend method')
     parser.add_argument('--image_quality', type=int, default=90, help='the image quality for defend method, on a scale from 1 (worst) to 95 (best). Values above 95 should be avoided.')
     parser.add_argument('--filter_kernel_size', type=int, default=3, help='filter kernel size for defend method.')
@@ -67,116 +67,169 @@ def type_switch(environ_value, value):
     elif isinstance(value, str):
         return environ_value
     
-def yolo_cfg(args):
+    
+def add_args(args):
     model_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.yaml'))[0]
     # print(model_yaml)
+    args.model_yaml = model_yaml
     model_name = os.path.splitext(os.path.basename(model_yaml))[0]
     # print(model_name)
-    args.model_yaml = model_yaml
     args.model_name = model_name
+    if args.process != 'train' or (args.process == 'train' and args.resume_from_checkpoint):
+        model_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
+        # print(model_path)
+        args.model_path = model_path
+    
     data_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.yaml'))[0]
     # print(data_yaml)
+    args.data_yaml = data_yaml
     data_name = os.path.splitext(os.path.basename(data_yaml))[0]
     # print(data_name)
-    args.data_yaml = data_yaml
     args.data_name = data_name
-    
-    model_cfg = load_yaml(model_yaml)
-    data_cfg = load_yaml(data_yaml)
-    
-    model_cfg['nc'] = data_cfg['nc']
-    data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
-    # print(data_path)
-    data_cfg['path'] = data_path
-    
-    args.nc = data_cfg['nc']
+    if args.process == 'attack' or args.process == 'defend' or args.process == 'predict':
+        data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
+    else:
+        data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
     args.data_path = data_path
     
+    return args
+
+
+def yolo_cfg(args):
+
+    model_cfg = load_yaml(args.model_yaml)
+    data_cfg = load_yaml(args.data_yaml)
+    model_cfg['nc'] = data_cfg['nc']
+    data_cfg['path'] = args.data_path
     model_yaml = './cfgs/model.yaml'
     save_yaml(model_cfg, model_yaml)
     data_yaml = './cfgs/data.yaml'
     save_yaml(data_cfg, data_yaml)
     
-    cfg_yaml = f'./nudt_ultralytics/cfgs/models/{args.task}/default.yaml'
+    cfg_yaml = f'./ultralytics/cfg/default.yaml'
     cfg = load_yaml(cfg_yaml)
     cfg = EasyDict(cfg)
-    cfg.process = args.process
-    cfg.task = args.task
+    
     cfg.model = model_yaml
-    if args.task == 'classify':
-        cfg.data = data_cfg['path']
-    else:
-        cfg.data = data_yaml
+    cfg.data = data_yaml
     cfg.save_dir = args.output_path
+    cfg.amp=False # 不下载Downloading https://github.com/ultralytics/assets/releases/download/v8.3.0/yolo11n.pt
     if args.process == 'adv':
-        cfg.mode = 'predict'
+        cfg.mode = 'adv'
         cfg.batch = 1
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
-        cfg.device = 'cpu'
         cfg.workers = args.workers
-    elif args.process == 'attack':
-        cfg.mode = 'validate'
-        cfg.batch = 1
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
         cfg.device = args.device if args.device == 'cpu' else -1
-        cfg.workers = args.workers
-        cfg.attack_method = args.attack_method
-    elif args.process == 'defend':
-        cfg.mode = 'predict'
+        cfg.pretrained = args.model_path
+    elif args.process == 'attack':
+        cfg.mode = 'attack'
         cfg.batch = 1
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
-        cfg.defend_method = args.defend_method
         cfg.workers = args.workers
+        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.pretrained = args.model_path
+        cfg.attack_method = args.attack_method
+        cfg.conf = 0.0 # 设置检测的最小置信度阈值。 将忽略置信度低于此阈值的检测到的对象。 调整此值有助于减少误报。
+        # cfg.max_det = 1 # 只检测置信度最大的一个物体
+        # cfg.classes = [2, ] # 只识别车 # 0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane', 5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light', 10: 'fire hydrant', 11: 'stop sign', 12: 'parking meter', 13: 'bench', 14: 'bird', 15: 'cat', 16: 'dog', 17: 'horse', 18: 'sheep', 19: 'cow', 20: 'elephant', 21: 'bear', 22: 'zebra', 23: 'giraffe', 24: 'backpack', 25: 'umbrella', 26: 'handbag', 27: 'tie', 28: 'suitcase', 29: 'frisbee', 30: 'skis', 31: 'snowboard', 32: 'sports ball', 33: 'kite', 34: 'baseball bat', 35: 'baseball glove', 36: 'skateboard', 37: 'surfboard', 38: 'tennis racket', 39: 'bottle', 40: 'wine glass', 41: 'cup', 42: 'fork', 43: 'knife', 44: 'spoon', 45: 'bowl', 46: 'banana', 47: 'apple', 48: 'sandwich', 49: 'orange', 50: 'broccoli', 51: 'carrot', 52: 'hot dog', 53: 'pizza', 54: 'donut', 55: 'cake', 56: 'chair', 57: 'couch', 58: 'potted plant', 59: 'bed', 60: 'dining table', 61: 'toilet', 62: 'tv', 63: 'laptop', 64: 'mouse', 65: 'remote', 66: 'keyboard', 67: 'cell phone', 68: 'microwave', 69: 'oven', 70: 'toaster', 71: 'sink', 72: 'refrigerator', 73: 'book', 74: 'clock', 75: 'vase', 76: 'scissors', 77: 'teddy bear', 78: 'hair drier', 79: 'toothbrush'
+    elif args.process == 'defend':
+        cfg.mode = 'defend'
+        cfg.batch = 1
+        cfg.workers = args.workers
+        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.pretrained = args.model_path
+        cfg.defend_method = args.defend_method
+        cfg.conf = 0.0 # 设置检测的最小置信度阈值。 将忽略置信度低于此阈值的检测到的对象。 调整此值有助于减少误报。
+        # cfg.max_det = 1 # 只检测置信度最大的一个物体
+        # cfg.classes = [2, ] # 只识别车 # 0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane', 5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light', 10: 'fire hydrant', 11: 'stop sign', 12: 'parking meter', 13: 'bench', 14: 'bird', 15: 'cat', 16: 'dog', 17: 'horse', 18: 'sheep', 19: 'cow', 20: 'elephant', 21: 'bear', 22: 'zebra', 23: 'giraffe', 24: 'backpack', 25: 'umbrella', 26: 'handbag', 27: 'tie', 28: 'suitcase', 29: 'frisbee', 30: 'skis', 31: 'snowboard', 32: 'sports ball', 33: 'kite', 34: 'baseball bat', 35: 'baseball glove', 36: 'skateboard', 37: 'surfboard', 38: 'tennis racket', 39: 'bottle', 40: 'wine glass', 41: 'cup', 42: 'fork', 43: 'knife', 44: 'spoon', 45: 'bowl', 46: 'banana', 47: 'apple', 48: 'sandwich', 49: 'orange', 50: 'broccoli', 51: 'carrot', 52: 'hot dog', 53: 'pizza', 54: 'donut', 55: 'cake', 56: 'chair', 57: 'couch', 58: 'potted plant', 59: 'bed', 60: 'dining table', 61: 'toilet', 62: 'tv', 63: 'laptop', 64: 'mouse', 65: 'remote', 66: 'keyboard', 67: 'cell phone', 68: 'microwave', 69: 'oven', 70: 'toaster', 71: 'sink', 72: 'refrigerator', 73: 'book', 74: 'clock', 75: 'vase', 76: 'scissors', 77: 'teddy bear', 78: 'hair drier', 79: 'toothbrush'
     elif args.process == 'train':
         cfg.mode = 'train'
         cfg.epochs = args.epochs
         cfg.batch = args.batch
-        cfg.device = args.device if args.device == 'cpu' else -1
         cfg.workers = args.workers
+        cfg.device = args.device if args.device == 'cpu' else -1
+        if args.resume_from_checkpoint:
+            cfg.pretrained = args.model_path
+        else:
+            cfg.pretrained = False
+        cfg.val = False # run validation/testing during training
+        cfg.conf = 0.0 # 设置检测的最小置信度阈值。 将忽略置信度低于此阈值的检测到的对象。 调整此值有助于减少误报。
+        # cfg.max_det = 1 # 只检测置信度最大的一个物体
+        # cfg.classes = [2, ] # 只识别车 # 0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane', 5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light', 10: 'fire hydrant', 11: 'stop sign', 12: 'parking meter', 13: 'bench', 14: 'bird', 15: 'cat', 16: 'dog', 17: 'horse', 18: 'sheep', 19: 'cow', 20: 'elephant', 21: 'bear', 22: 'zebra', 23: 'giraffe', 24: 'backpack', 25: 'umbrella', 26: 'handbag', 27: 'tie', 28: 'suitcase', 29: 'frisbee', 30: 'skis', 31: 'snowboard', 32: 'sports ball', 33: 'kite', 34: 'baseball bat', 35: 'baseball glove', 36: 'skateboard', 37: 'surfboard', 38: 'tennis racket', 39: 'bottle', 40: 'wine glass', 41: 'cup', 42: 'fork', 43: 'knife', 44: 'spoon', 45: 'bowl', 46: 'banana', 47: 'apple', 48: 'sandwich', 49: 'orange', 50: 'broccoli', 51: 'carrot', 52: 'hot dog', 53: 'pizza', 54: 'donut', 55: 'cake', 56: 'chair', 57: 'couch', 58: 'potted plant', 59: 'bed', 60: 'dining table', 61: 'toilet', 62: 'tv', 63: 'laptop', 64: 'mouse', 65: 'remote', 66: 'keyboard', 67: 'cell phone', 68: 'microwave', 69: 'oven', 70: 'toaster', 71: 'sink', 72: 'refrigerator', 73: 'book', 74: 'clock', 75: 'vase', 76: 'scissors', 77: 'teddy bear', 78: 'hair drier', 79: 'toothbrush'
     elif args.process == 'test':
-        cfg.mode = 'validate'
-        cfg.batch = 1
-        cfg.pretrained = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
-        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.mode = 'test'
+        cfg.batch = args.batch
         cfg.workers = args.workers
+        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.pretrained = args.model_path
+        cfg.conf = 0.0 # 设置检测的最小置信度阈值。 将忽略置信度低于此阈值的检测到的对象。 调整此值有助于减少误报。
+        # cfg.max_det = 1 # 只检测置信度最大的一个物体
+        # cfg.classes = [2, ] # 只识别车 # 0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane', 5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light', 10: 'fire hydrant', 11: 'stop sign', 12: 'parking meter', 13: 'bench', 14: 'bird', 15: 'cat', 16: 'dog', 17: 'horse', 18: 'sheep', 19: 'cow', 20: 'elephant', 21: 'bear', 22: 'zebra', 23: 'giraffe', 24: 'backpack', 25: 'umbrella', 26: 'handbag', 27: 'tie', 28: 'suitcase', 29: 'frisbee', 30: 'skis', 31: 'snowboard', 32: 'sports ball', 33: 'kite', 34: 'baseball bat', 35: 'baseball glove', 36: 'skateboard', 37: 'surfboard', 38: 'tennis racket', 39: 'bottle', 40: 'wine glass', 41: 'cup', 42: 'fork', 43: 'knife', 44: 'spoon', 45: 'bowl', 46: 'banana', 47: 'apple', 48: 'sandwich', 49: 'orange', 50: 'broccoli', 51: 'carrot', 52: 'hot dog', 53: 'pizza', 54: 'donut', 55: 'cake', 56: 'chair', 57: 'couch', 58: 'potted plant', 59: 'bed', 60: 'dining table', 61: 'toilet', 62: 'tv', 63: 'laptop', 64: 'mouse', 65: 'remote', 66: 'keyboard', 67: 'cell phone', 68: 'microwave', 69: 'oven', 70: 'toaster', 71: 'sink', 72: 'refrigerator', 73: 'book', 74: 'clock', 75: 'vase', 76: 'scissors', 77: 'teddy bear', 78: 'hair drier', 79: 'toothbrush'
+    elif args.process == 'predict':
+        cfg.mode = 'predict'
+        cfg.batch = 1
+        cfg.workers = args.workers
+        cfg.device = args.device if args.device == 'cpu' else -1
+        cfg.pretrained = args.model_path
+        cfg.conf = 0.0 # 设置检测的最小置信度阈值。 将忽略置信度低于此阈值的检测到的对象。 调整此值有助于减少误报。
+        # cfg.max_det = 1 # 只检测置信度最大的一个物体
+        # cfg.classes = [2, ] # 只识别车 # 0: 'person', 1: 'bicycle', 2: 'car', 3: 'motorcycle', 4: 'airplane', 5: 'bus', 6: 'train', 7: 'truck', 8: 'boat', 9: 'traffic light', 10: 'fire hydrant', 11: 'stop sign', 12: 'parking meter', 13: 'bench', 14: 'bird', 15: 'cat', 16: 'dog', 17: 'horse', 18: 'sheep', 19: 'cow', 20: 'elephant', 21: 'bear', 22: 'zebra', 23: 'giraffe', 24: 'backpack', 25: 'umbrella', 26: 'handbag', 27: 'tie', 28: 'suitcase', 29: 'frisbee', 30: 'skis', 31: 'snowboard', 32: 'sports ball', 33: 'kite', 34: 'baseball bat', 35: 'baseball glove', 36: 'skateboard', 37: 'surfboard', 38: 'tennis racket', 39: 'bottle', 40: 'wine glass', 41: 'cup', 42: 'fork', 43: 'knife', 44: 'spoon', 45: 'bowl', 46: 'banana', 47: 'apple', 48: 'sandwich', 49: 'orange', 50: 'broccoli', 51: 'carrot', 52: 'hot dog', 53: 'pizza', 54: 'donut', 55: 'cake', 56: 'chair', 57: 'couch', 58: 'potted plant', 59: 'bed', 60: 'dining table', 61: 'toilet', 62: 'tv', 63: 'laptop', 64: 'mouse', 65: 'remote', 66: 'keyboard', 67: 'cell phone', 68: 'microwave', 69: 'oven', 70: 'toaster', 71: 'sink', 72: 'refrigerator', 73: 'book', 74: 'clock', 75: 'vase', 76: 'scissors', 77: 'teddy bear', 78: 'hair drier', 79: 'toothbrush'
     elif args.process == 'sample':
         # dont need modify cfg
         pass
     
     
-    cfg.epsilon = args.epsilon
-    cfg.step_size = args.step_size
-    cfg.max_iterations = args.max_iterations
-    cfg.random_start = args.random_start
-    cfg.loss_function = args.loss_function
-    cfg.optimization_method = args.optimization_method
-    cfg.lr = args.lr
-    cfg.scaling_factor = args.scaling_factor
-    cfg.interpolate_method = args.interpolate_method
-    cfg.image_quality = args.image_quality
-    cfg.filter_kernel_size = args.filter_kernel_size
-    
     # print(cfg)
     cfg = dict(cfg)
     args.cfg_yaml = './cfgs/default.yaml'
     save_yaml(cfg, args.cfg_yaml)
+    
     return args
 
+
 def main(args):
+    args = add_args(args)
     args = yolo_cfg(args)
-    yolo(args)
+    
+    if args.process == 'adv':
+        from process.adv import adv # 必须在'./cfgs/default.yaml'保存后import
+        adv(args)
+    elif args.process == 'attack':
+        from process.attack_use_adv import attack_use_adv # 必须在'./cfgs/default.yaml'保存后import
+        attack_use_adv(args)
+    elif args.process == 'defend':
+        from process.defend_use_adv import defend_use_adv
+        defend_use_adv(args)
+    elif args.process == 'train':
+        from process.train import train
+        train(args)
+    elif args.process == 'test':
+        from process.test import test
+        test(args)
+    elif args.process == 'predict':
+        from process.predict import predict
+        predict(args)
+    elif args.process == 'sample': 
+        from sample.sample import sample_dataset
+        sampled_data_path = f'{args.output_path}/sampled_' + args.data_name
+        sample_dataset(source_dir=args.data_path, target_dir=sampled_data_path, train_count=args.selected_samples, val_count=args.selected_samples, seed=None)
+        os.system(f"cp {args.data_yaml} {args.output_path}")
+        
+        from utils.sse import sse_print
+        event = "final_result"
+        data = {
+            "message": "数据集抽取完毕.",
+            "progress": 100,
+            "log": f"[100%] 从{args.data_path}数据集中抽取{args.selected_samples}张样本生成小数据集保存在{sampled_data_path}"
+        }
+        sse_print(event, data)
+    else:
+        raise ValueError('任务不支持.')
+ 
         
 if __name__ == '__main__':
     args = parse_args()
     
     sse_input_path_validated(args)
     sse_output_path_validated(args)
-    # sse_working_path_created(args.working_path)
-    # sse_source_unzip_completed(args.dataset_path, args.working_path)
     main(args)
-    
-    
-    
-    
     
     

@@ -1,8 +1,8 @@
 {
   "settings_version": "0.0.6",
   "datasets_dir": "/data6/user23215430/datasets",
-  "weights_dir": "/data6/user23215430/NUDT_attack_vehicle/weights",
-  "runs_dir": "/data6/user23215430/NUDT_attack_vehicle/runs",
+  "weights_dir": "/data6/user23215430/nudt/weights",
+  "runs_dir": "/data6/user23215430/nudt/runs",
   "uuid": "d58f79928592feba571f42670f583d1230652c2006edd508d4602a3a2874e6f2",
   "sync": true,
   "api_key": "",

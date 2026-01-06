@@ -22,6 +22,7 @@ from ultralytics.nn.tasks import (
 )
 from ultralytics.utils import ROOT, YAML
 
+
 class YOLO(Model):
     """
     YOLO (You Only Look Once) object detection model.

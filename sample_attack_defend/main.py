@@ -6,10 +6,12 @@ import glob
 
 from utils.sse import sse_input_path_validated, sse_output_path_validated
 from utils.yaml_rw import load_yaml, save_yaml
-from attacks.attack import attack
-from attacks.adv_attack import adv_attack
+
 from attacks.adv import adv
+from attacks.attack_use_adv import attack_use_adv
+from attacks.attack import adv_attack
 from defends.defend import defend
+from defends.defend_use_adv import defend_use_adv
 from detects.detect import detect
 
 def parse_args():
@@ -18,7 +20,7 @@ def parse_args():
     parser.add_argument('--input_path', type=str, default='./input', help='input path')
     parser.add_argument('--output_path', type=str, default='./output', help='output path')
     
-    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack', 'adv_attack', 'defend', 'detect'], help='process name')
+    parser.add_argument('--process', type=str, default='adv', choices=['adv', 'attack', 'defend', 'detect'], help='process name')
     # parser.add_argument('--process', type=str, default='attack', choices=['adv', 'attack', 'defend', 'train', 'test', 'sample'], help='process name')
     # parser.add_argument('--model', type=str, default='yolov5', choices=['yolov5', 'yolov8', 'yolov10'], help='model name')
     # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
@@ -111,10 +113,10 @@ def main(args):
     if args.process == 'adv':
         adv(args)
     elif args.process == 'attack':
-        attack(args)
-    elif args.process == 'adv_attack':
-        adv_attack(args)
+        attack_use_adv(args)
+        # attack(args)
     elif args.process == 'defend':
+        # defend_use_adv(args)
         defend(args)
     elif args.process == 'detect':
         detect(args)
@@ -126,8 +128,6 @@ if __name__ == '__main__':
     
     sse_input_path_validated(args)
     sse_output_path_validated(args)
-    # sse_working_path_created(args.working_path)
-    # sse_source_unzip_completed(args.dataset_path, args.working_path)
     main(args)
     
     

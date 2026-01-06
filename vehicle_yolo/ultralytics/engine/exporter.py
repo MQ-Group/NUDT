@@ -196,7 +196,6 @@ def validate_args(format, passed_args, valid_args):
 
     assert valid_args is not None, f"ERROR ❌️ valid arguments for '{format}' not listed."
     custom = {"batch": 1, "data": None, "device": None}  # exporter defaults
-    print('^'*100)
     default_args = get_cfg(DEFAULT_CFG, custom)
     for arg in export_args:
         not_default = getattr(passed_args, arg, None) != getattr(default_args, arg, None)

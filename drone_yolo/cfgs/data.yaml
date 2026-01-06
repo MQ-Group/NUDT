@@ -1,7 +1,13 @@
-path: ./input/data/sampled_drone_type/sampled_drone_type/
+path: ./input/data/drone_type/drone_type/
 train: images/train
 val: images/val
 test: null
-nc: 1
+nc: 7
 names:
-  0: drone
+  0: Bebop
+  1: DJI_phantom_3
+  2: DJI_phantom_4_pro
+  3: Emax
+  4: Intel_Aero_RTF
+  5: Mambo
+  6: YH_19Hw

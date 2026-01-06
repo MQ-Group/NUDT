@@ -48,13 +48,13 @@ class LeNet5(nn.Module):
 
 
 def get_model(model_name, num_classes=10):
-    if model_name == 'vgg':
+    if model_name == 'vgg16':
         model = models.vgg16(weights=None)
         model.classifier[6] = nn.Linear(4096, num_classes)
-    elif model_name == 'resnet':
+    elif model_name == 'resnet50':
         model = models.resnet50(weights=None)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
-    elif model_name == 'inception':
+    elif model_name == 'inception_v3':
         model = models.inception_v3(weights=None, aux_logits=True)
         model.AuxLogits.fc = nn.Linear(model.AuxLogits.fc.in_features, num_classes)
         model.fc = nn.Linear(model.fc.in_features, num_classes)

@@ -173,8 +173,6 @@ if __name__ == '__main__':
     # print(args)
     sse_input_path_validated(args)
     sse_output_path_validated(args)
-    # sse_working_path_created(args.working_path)
-    # sse_source_unzip_completed(args.dataset_path, args.working_path)
     main(args)
     
     

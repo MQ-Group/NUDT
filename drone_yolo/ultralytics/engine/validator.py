@@ -204,7 +204,7 @@ class BaseValidator:
         for batch_i, batch in enumerate(bar):
             self.run_callbacks("on_val_batch_start")
             self.batch_i = batch_i
-            self.orignal_image = batch["im_file"]
+            
             # Preprocess
             with dt[0]:
                 batch = self.preprocess(batch)
@@ -223,10 +223,9 @@ class BaseValidator:
                 preds = self.postprocess(preds)
 
             self.update_metrics(preds, batch)
-            # if self.args.plots and batch_i < 3:
-            if self.args.plots and self.args.process in ["attack", "defend"]:
+            if self.args.plots and batch_i < 3:
                 self.plot_val_samples(batch, batch_i)
-                self.plot_predictions(batch, preds, batch_i) # 预测图像没框
+                self.plot_predictions(batch, preds, batch_i)
 
             self.run_callbacks("on_val_batch_end")
             

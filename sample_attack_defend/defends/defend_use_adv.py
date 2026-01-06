@@ -21,7 +21,7 @@ from torchvision import transforms
 
 from utils.sse import sse_print
 
-def defend(args):
+def defend_use_adv(args):
     device = args.device
     
     try:

@@ -138,8 +138,8 @@ def load_model(model_name: str,
                     data = {
                         "status": "success",
                         "message": "模型加载完成.",
-                        "model name": model_name,
-                        "model path": model_path
+                        "model_name": model_name,
+                        "model_path": model_path
                     }
                     sse_print(event, data)
                 else:
@@ -150,8 +150,8 @@ def load_model(model_name: str,
                 data = {
                     "status": "failure",
                     "message": f"{e}",
-                    "model name": model_name,
-                    "model path": model_path
+                    "model_name": model_name,
+                    "model_path": model_path
                 }
                 sse_print(event, data)
                 

@@ -151,7 +151,7 @@ class BaseTrainer:
         # Device
         if self.device.type in {"cpu", "mps"}:
             self.args.workers = 0  # faster CPU training as time dominated by inference, not dataloading
-
+        
         # Model and Dataset
         self.model = check_model_file_from_stem(self.args.model)  # add suffix, i.e. yolo11n -> yolo11n.pt // 没有与训练权重的话 self.model==yolox.yaml,否则为.pt
         with torch_distributed_zero_first(LOCAL_RANK):  # avoid auto-downloading dataset multiple times
@@ -322,7 +322,8 @@ class BaseTrainer:
             # Note: When training DOTA dataset, double batch size could get OOM on images with >2000 objects.
             self.test_loader = self.get_dataloader(
                 self.data.get("val") or self.data.get("test"),
-                batch_size=batch_size if self.args.task == "obb" else batch_size * 2,
+                # batch_size=batch_size if self.args.task == "obb" else batch_size * 2,
+                batch_size=batch_size if self.args.task == "obb" else batch_size,
                 rank=-1,
                 mode="val",
             )
@@ -396,7 +397,6 @@ class BaseTrainer:
                 LOGGER.info(self.progress_string())
                 pbar = TQDM(enumerate(self.train_loader), total=nb)
             self.tloss = None
-            self.total_batch = nb
             for i, batch in pbar:
                 self.batch_i = i
                 self.run_callbacks("on_train_batch_start")
@@ -422,6 +422,7 @@ class BaseTrainer:
                         loss, self.loss_items = unwrap_model(self.model).loss(batch, preds)
                     else:
                         loss, self.loss_items = self.model(batch)
+                        # print(self.model) # DetectionModel
                     self.loss = loss.sum()
                     if RANK != -1:
                         self.loss *= self.world_size
@@ -459,24 +460,22 @@ class BaseTrainer:
                     self.run_callbacks("on_batch_end")
                     if self.args.plots and ni in self.plot_idx:
                         self.plot_training_samples(batch, ni)
-
+                
                 self.run_callbacks("on_train_batch_end")
 
             self.lr = {f"lr/pg{ir}": x["lr"] for ir, x in enumerate(self.optimizer.param_groups)}  # for loggers
 
-            t = time.time()
-            self.epoch_time = t - self.epoch_time_start
-            
             self.run_callbacks("on_train_epoch_end")
             if RANK in {-1, 0}:
                 final_epoch = epoch + 1 >= self.epochs
                 self.ema.update_attr(self.model, include=["yaml", "nc", "args", "names", "stride", "class_weights"])
 
                 # Validation
-                if self.args.val or final_epoch or self.stopper.possible_stop or self.stop:
+                # if self.args.val or final_epoch or self.stopper.possible_stop or self.stop:
+                if self.args.val or self.stopper.possible_stop or self.stop: # 训练时不进行推理
                     self._clear_memory(threshold=0.5)  # prevent VRAM spike
                     self.metrics, self.fitness = self.validate()
-
+            
             # NaN recovery
             if self._handle_nan_recovery(epoch):
                 continue
@@ -494,9 +493,8 @@ class BaseTrainer:
                     self.run_callbacks("on_model_save")
                     
             # Scheduler
-            # 放到上面去
-            # t = time.time()
-            # self.epoch_time = t - self.epoch_time_start
+            t = time.time()
+            self.epoch_time = t - self.epoch_time_start
             self.epoch_time_start = t
             if self.args.time:
                 mean_epoch_time = (t - self.train_time_start) / (epoch - self.start_epoch + 1)
@@ -521,7 +519,7 @@ class BaseTrainer:
             # Do final val with best.pt
             seconds = time.time() - self.train_time_start
             LOGGER.info(f"\n{epoch - self.start_epoch + 1} epochs completed in {seconds / 3600:.3f} hours.")
-            self.final_eval()
+            # self.final_eval()  # 训练时不进行推理
             if self.args.plots:
                 self.plot_metrics()
             self.run_callbacks("on_train_end")

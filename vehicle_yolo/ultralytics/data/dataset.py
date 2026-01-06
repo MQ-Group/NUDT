@@ -797,15 +797,15 @@ class ClassificationDataset:
         )
         
         ##########################defend################################################
-        self.defend_en = True if hyp.process == 'defend' else False
+        self.defend_en = True if args.process == 'defend' else False
+        self.defend_method = args.defend_method
+        
         if self.defend_en:
-            self.defend_method = hyp.defend_method
-            # print(self.defend_method)
             if self.defend_method == 'compression':
                 from defends.ipeg_compression import JpegCompression
                 self.defend = JpegCompression(
                                     clip_values=(0, 255),
-                                    quality=hyp.image_quality,
+                                    quality=50,
                                     channels_first=False,
                                     apply_fit=True,
                                     apply_predict=True,
@@ -814,22 +814,18 @@ class ClassificationDataset:
             elif self.defend_method == 'scale':
                 from defends.jpeg_scale import JpegScale
                 self.defend = JpegScale(
-                                    scale=hyp.scaling_factor,
-                                    interp=hyp.interpolate_method
+                                    scale=0.9,
+                                    interp="bilinear"
                                 )
             elif self.defend_method == 'neural_cleanse':
                 from defends.neural_cleanse import NeuralCleanse
-                self.defend = NeuralCleanse(kernel_size=hyp.filter_kernel_size)
+                self.defend = NeuralCleanse(kernel_size=3)
             elif self.defend_method == 'pgd_purifier':
                 from defends.pgd_purifier import PGDPurifier
-                self.defend = PGDPurifier(
-                                        steps=hyp.max_iterations, 
-                                        alpha=hyp.step_size, 
-                                        epsilon=hyp.epsilon
-                                    )
+                self.defend = PGDPurifier(steps=10, alpha=1.0, epsilon=8.0)
             elif self.defend_method == 'fgsm_denoise':
                 from defends.fgsm_denoise import FGSMDenoise
-                self.defend = FGSMDenoise(epsilon=hyp.epsilon)
+                self.defend = FGSMDenoise(epsilon=8.0)
             else:
                 raise ValueError('Invalid defend method!')
 

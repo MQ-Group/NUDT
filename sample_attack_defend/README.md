@@ -51,7 +51,7 @@
 ### 攻击防御检测方法的有效参数
 ss == spatial_smoothing \
 fs == feature_squeezing \
-lid = local_intrinsic_dimensionality
+lid == local_intrinsic_dimensionality
 
 | 参数 | fgsm | pgd | bim | cw | deepfool | gn | jitter | boundary | zoo | hsja | nes | yopo | pgdrs | trades | free | fast | ss | fs | lid |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|

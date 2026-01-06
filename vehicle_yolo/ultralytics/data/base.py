@@ -148,42 +148,6 @@ class BaseDataset(Dataset):
         # Transforms
         self.transforms = self.build_transforms(hyp=hyp)
         
-        ##########################defend################################################
-        self.defend_en = True if hyp.process == 'defend' else False
-        if self.defend_en:
-            self.defend_method = hyp.defend_method
-            # print(self.defend_method)
-            if self.defend_method == 'compression':
-                from defends.ipeg_compression import JpegCompression
-                self.defend = JpegCompression(
-                                    clip_values=(0, 255),
-                                    quality=hyp.image_quality,
-                                    channels_first=False,
-                                    apply_fit=True,
-                                    apply_predict=True,
-                                    verbose=False,
-                                )
-            elif self.defend_method == 'scale':
-                from defends.jpeg_scale import JpegScale
-                self.defend = JpegScale(
-                                    scale=hyp.scaling_factor,
-                                    interp=hyp.interpolate_method
-                                )
-            elif self.defend_method == 'neural_cleanse':
-                from defends.neural_cleanse import NeuralCleanse
-                self.defend = NeuralCleanse(kernel_size=hyp.filter_kernel_size)
-            elif self.defend_method == 'pgd_purifier':
-                from defends.pgd_purifier import PGDPurifier
-                self.defend = PGDPurifier(
-                                        steps=hyp.max_iterations, 
-                                        alpha=hyp.step_size, 
-                                        epsilon=hyp.epsilon
-                                    )
-            elif self.defend_method == 'fgsm_denoise':
-                from defends.fgsm_denoise import FGSMDenoise
-                self.defend = FGSMDenoise(epsilon=hyp.epsilon)
-            else:
-                raise ValueError('Invalid defend method!')
         
     def get_img_files(self, img_path: str | list[str]) -> list[str]:
         """
@@ -431,18 +395,6 @@ class BaseDataset(Dataset):
         label = deepcopy(self.labels[index])  # requires deepcopy() https://github.com/ultralytics/ultralytics/pull/1948
         label.pop("shape", None)  # shape is for rect, remove it
         label["img"], label["ori_shape"], label["resized_shape"] = self.load_image(index)
-        
-        ##############defend######################
-        if self.defend_en:
-            # print(label.keys())
-            # print(self.defend_method)
-            im = label["img"]
-            im = torch.from_numpy(im)
-            im = im.unsqueeze(0)
-            im, _ = self.defend(im, label["cls"])
-            im = im.squeeze(0)
-            im = im.numpy()
-            label["img"] = im
         
         label["ratio_pad"] = (
             label["resized_shape"][0] / label["ori_shape"][0],
