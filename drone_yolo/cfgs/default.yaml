@@ -1,11 +1,11 @@
 task: detect
-mode: train
+mode: defend
 model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
 epochs: 100
 time: null
 patience: 100
-batch: 16
+batch: 1
 imgsz: 640
 save: true
 save_period: -1
@@ -15,7 +15,7 @@ workers: 16
 project: null
 name: null
 exist_ok: false
-pretrained: ./input/model/drone_yolo/best.pt
+pretrained: ./input/model/drone_yolo/drone_yolo.pt
 optimizer: auto
 verbose: true
 seed: 0
@@ -34,10 +34,10 @@ compile: false
 overlap_mask: true
 mask_ratio: 4
 dropout: 0.0
-val: false
+val: true
 split: val
 save_json: false
-conf: null
+conf: 0.0
 iou: 0.7
 max_det: 1
 half: false
@@ -104,3 +104,4 @@ erasing: 0.4
 cfg: null
 tracker: botsort.yaml
 save_dir: ./output
+defend_method: scale

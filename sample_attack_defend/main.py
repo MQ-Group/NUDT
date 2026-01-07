@@ -26,8 +26,8 @@ def parse_args():
     # parser.add_argument('--data', type=str, default='kitti', choices=['kitti', 'bdd100k', 'ua-detrac', 'dawn', 'special_vehicle', 'flir_adas', 'imagenet10'], help='data name')
     # parser.add_argument('--class_number', type=int, default=8, choices=[8, 10, 4, 1, 1000], help='number of class. 8 for kitti, 10 for bdd100k, 4 for ua-detrac, 5 for special_vehicle, 1 for dawn, 1 for flir_adas')
     
-    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'boundary', 'zoo', 'hsja', 'nes', 'yopo', 'pgdrs', 'trades', 'free', 'fast'], help='attack method')
-    parser.add_argument('--defend_method', type=str, default='yopo', choices=['yopo', 'pgdrs', 'trades', 'free', 'fast', 'fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'boundary', 'zoo', 'hsja', 'nes'], help='defend method')
+    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'mifgsm', 'vmifgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'boundary', 'zoo', 'hsja', 'nes', 'yopo', 'pgdrs', 'trades', 'free', 'fast'], help='attack method')
+    parser.add_argument('--defend_method', type=str, default='yopo', choices=['yopo', 'pgdrs', 'trades', 'free', 'fast', 'fgsm', 'mifgsm', 'vmifgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'boundary', 'zoo', 'hsja', 'nes'], help='defend method')
     parser.add_argument('--detect_method', type=str, default='spatial_smoothing', choices=['spatial_smoothing', 'feature_squeezing', 'local_intrinsic_dimensionality'], help='detect method')
     
     parser.add_argument('--epochs', type=int, default=1, help='epochs')
@@ -36,10 +36,14 @@ def parse_args():
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     
     parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--adversarial_sample_proportion', type=int, default=50, help='adversarial sample proportion in dataset when defend train for defend method')
     
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method and defend medthod')
-    parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
-    parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method and defend medthod')
+    parser.add_argument('--step_size', type=float, default=2/255, help='step size for attack method and defend medthod')
+    parser.add_argument('--max_iterations', type=int, default=50, help='max iterations for attack method and defend medthod')
+    
+    parser.add_argument('--delay', type=float, default=1.0, help='momentum factor of mifgsm for attack method')
+    parser.add_argument('--sampled_examples', type=int, default=5, help='the number of sampled examples in the neighborhood of vmifgsm for attack method')
     
     parser.add_argument('--random_start', type=bool, default=True, help='initial random start for attack method')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
@@ -50,7 +54,7 @@ def parse_args():
     parser.add_argument('--max_queries', type=int, default=10, help='max queries for attack method')
     parser.add_argument('--binary_search_steps', type=int, default=10, help='binary search steps for attack method')
     parser.add_argument('--norm', type=str, default='L2', choices=['L2', 'Linf'], help='norm for attack method')
-
+    
     # defend method
     parser.add_argument('--noise_type', type=str, default='guassian', choices=['guassian', 'uniform'], help='pgdrs parameter for defend method')
     parser.add_argument('--noise_sd', type=float, default=0.5, help='pgdrs parameter noise standard deviation for defend method')

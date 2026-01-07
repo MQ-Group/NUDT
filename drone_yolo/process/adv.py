@@ -9,7 +9,7 @@ os.environ['YOLO_CONFIG_DIR'] = YOLO_CONFIG_DIR
 from ultralytics.utils import DEFAULT_CFG
 from ultralytics.models.yolo.detect.train import DetectionTrainer
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter
+from torchattacks import FGSM, MIFGSM, VMIFGSM, PGD, BIM, CW, DeepFool, GN, Jitter
 # import glob
 
 from torchvision import transforms
@@ -48,6 +48,10 @@ def adv(args):
         # print(args.attack_method)
         if args.attack_method == 'fgsm':
             atk = FGSM(yolo.model, eps=args.epsilon)
+        elif args.attack_method == 'mifgsm':
+            atk = MIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay)
+        elif args.attack_method == 'vmifgsm':
+            atk = VMIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay, N=args.sampled_examples, beta=3/2)
         elif args.attack_method == 'pgd':
             atk = PGD(yolo.model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
         elif args.attack_method == 'bim':

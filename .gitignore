@@ -33,7 +33,7 @@ sample_attack_defend/output/
 base_train_optimaze/input/
 base_train_optimaze/output/
 
-drone_recognition/
+vehicle_ssd/
 autodrive_llm/
 
 poisioning/input/

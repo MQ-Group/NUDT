@@ -11,7 +11,7 @@
 * ~~`model`（str 必填）: 指定模型名称，支持枚举值:`yolov5`, `yolov8`, `yolov10` 。~~
 * ~~`data`（str 必填）: 指定数据集，支持枚举值:`kitti`, `bdd100k`, `ua-detrac`, `dawn`, `special_vehicle`, `flir_adas`。~~
 * ~~`class_number`（int 必填）: 指定目标类别数量，与数据集绑定，对于kitti数据集为`8` 。~~
-* `attack_method`（str 选填，默认为`fgsm`）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `fgsm`, `pgd`, `bim`, `cw`, `deepfool`, `gn`, `jitter`。
+* `attack_method`（str 选填，默认为`fgsm`）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `fgsm`, `mifgsm`, `vmifgsm`, `pgd`, `bim`, `cw`, `deepfool`, `gn`, `jitter`。
 * `defend_method`（str 选填，默认为`scale`）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`scale`, `compression`, `fgsm_denoise`, `neural_cleanse`, `pgd_purifier`。
 * `selected_samples`（int 选填，默认为64，0表示数据集全部样本数据）: 若`process`为`adv`时有效，生成对抗样本时使用的样本数。
 * `confidence_threshold`（float 选填，默认为`0.1`）：攻击防御之后置信度变化阈值，超过该值说明攻击防御成功，若`process`为`attack`或`defend`时有效。
@@ -23,7 +23,11 @@
 * `epsilon`（float 选填，默认为`8/255`）：扰动强度参数，控制对抗扰动大小。
 * `step_size`（float 选填，默认为`2/255`）：步长，迭代攻击的更新幅度。
 * `max_iterations`（int 选填，默认为`50`）：最大迭代次数。
+* `delay`（float 选填，默认为`1.0`）：延时，取值在（0，1）之间，其值越小，迭代轮数靠前算出来的梯度对当前的梯度方向影响越小。
+* `sampled_examples`（int 选填，默认为`5`）：邻近抽取的样例数。
 * `random_start`（bool 选填，默认为`False`）：是否随机初始化扰动，支持枚举值（第一个为默认值）:`False`, `True`。
+* ~~`loss_function`（str 选填，默认为`cross_entropy`）：损失函数类型，支持枚举值（第一个为默认值）:`cross_entropy`, `mse`, `l1`, `binary_cross_entropy`。~~
+* ~~`optimization_method`（str 选填，默认为`adam`）：优化方法，支持枚举值（第一个为默认值）:`adam`, `sgd`。~~
 * `lr`（float 选填，默认为`0.001`）：优化器学习率。
 * `scale`（int 选填，默认为`10`）：尺度。
 * `std`（float 选填，默认为`0.1`）：标准差。
@@ -34,19 +38,21 @@
 
 
 ### 攻击防御方法的有效参数
-| 参数 | fgsm | pgd | bim | cw | deepfool | gn | jitter | scale | compression | neural_cleanse | pgd_purifier | fgsm_denoise |
-|------|------|-----|-----|----|----------|----|--------|-------|-------------|----------------|--------------|--------------|
-| epsilon | 1 | 1 | 1 | | | | 1 | | | | 1 | 1 |
-| step_size | | 1 | 1 | | | | 1 | | | | 1 | |
-| max_iterations | | 1 | 1 | 1 | 1 | | 1 | | | | 1 | |
-| random_start | | 1 | | | | | 1 | | | | | |
-| lr | | | | 1 | | | | | | | | |
-| std | | | | | | 1 | 1 | | | | | |
-| scale | | | | | | | 1 | | | | | |
-| scaling_factor | | | | | | | | 1 | | | | |
-| interpolate_method | | | | | | | | 1 | | | | |
-| image_quality | | | | | | | | | 1 | | | |
-| filter_kernel_size | | | | | | | | | | 1 | | |
+| 参数 | fgsm | mifgsm | vmifgsm | pgd | bim | cw | deepfool | gn | jitter | scale | compression | neural_cleanse | pgd_purifier | fgsm_denoise |
+|------|------|--------|---------|-----|-----|----|----------|----|--------|-------|-------------|----------------|--------------|--------------|
+| epsilon | 1 | 1 | 1 | 1 | 1 | | | | 1 | | | | 1 | 1 |
+| step_size | | 1 | 1 | 1 | 1 | | | | 1 | | | | 1 | |
+| max_iterations | | 1 | 1 | 1 | 1 | 1 | 1 | | 1 | | | | 1 | |
+| decay | | 1 | 1 | | | | | | | | | | | |
+| sampled_examples | | | 1 | | | | | | | | | | | |
+| random_start | | | | 1 | | | | | 1 | | | | | |
+| lr | | | | | | 1 | | | | | | | | |
+| std | | | | | | | | 1 | 1 | | | | | |
+| scale | | | | | | | | | 1 | | | | | |
+| scaling_factor | | | | | | | | | | 1 | | | | |
+| interpolate_method | | | | | | | | | | 1 | | | | |
+| image_quality | | | | | | | | | | | 1 | | | |
+| filter_kernel_size | | | | | | | | | | | | 1 | | |
 
 
 ### 说明
@@ -102,6 +108,8 @@ docker run --rm \
     -e epsilon=0.0313 \
     -e step_size=0.0078 \
     -e max_iterations=50 \
+    -e decay=1.0 \
+    -e sampled_examples=5 \
     -e random_start=False \
     -e loss_function=cross_entropy \
     -e optimization_method=adam \

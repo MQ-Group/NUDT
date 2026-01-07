@@ -1,5 +1,5 @@
 task: detect
-mode: defend
+mode: attack
 model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
 epochs: 100
@@ -104,4 +104,4 @@ erasing: 0.4
 cfg: null
 tracker: botsort.yaml
 save_dir: ./output
-defend_method: neural_cleanse
+attack_method: fgsm

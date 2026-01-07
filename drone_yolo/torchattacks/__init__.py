@@ -1,4 +1,6 @@
 from .attacks.fgsm import FGSM
+from .attacks.mifgsm import MIFGSM
+from .attacks.vmifgsm import VMIFGSM
 from .attacks.pgd import PGD
 from .attacks.bim import BIM
 from .attacks.cw import CW

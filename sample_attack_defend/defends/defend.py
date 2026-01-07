@@ -15,7 +15,7 @@ from robustbench.utils import load_model, clean_accuracy
 
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter, Boundary, ZOO, HSJA, NES, PGDRS
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool, MIFGSM, VMIFGSM, GN, Jitter, Boundary, ZOO, HSJA, NES, PGDRS
 from torchdefends import YOPO, TRADES, FREE, FAST
 from attacks.utils import imshow, get_pred
 from torchvision import transforms
@@ -101,6 +101,10 @@ def defend(args):
         # print(args.defend_method)
         if args.defend_method == 'fgsm':
             atk = FGSM(model, eps=args.epsilon)
+        elif args.defend_method == 'mifgsm':
+            atk = MIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay)
+        elif args.defend_method == 'vmifgsm':
+            atk = VMIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay, N=args.sampled_examples, beta=3/2)
         elif args.defend_method == 'pgd':
             atk = PGD(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
         elif args.defend_method == 'bim':
@@ -162,14 +166,14 @@ def defend(args):
             # print(labels.shape)
             images, labels = images.to(device), labels.to(device)
             
-            model.eval()
-            
-            adv_images = atk(images, labels)
+            if (batch_i/total_batch)*100 <= args.adversarial_sample_proportion: # 对抗样本占比
+                model.eval()
+                images = atk(images, labels) # 使用adv_images进行训练
             
             model.train()
             # 前向传播
             optimizer.zero_grad()  # 清除梯度
-            outputs = model(adv_images)  # 使用adv_images进行训练
+            outputs = model(images)
             loss = criterion(outputs, labels)
             
             # 反向传播
@@ -195,7 +199,7 @@ def defend(args):
                     "loss": f"{current_loss:.4f}", 
                     "accuracy": f"{current_acc:.2f}%", 
                     "batch_size": args.batch,
-                    "image_size": adv_images.shape[-1]
+                    "image_size": images.shape[-1]
                 }
             }
             sse_print(event, data)

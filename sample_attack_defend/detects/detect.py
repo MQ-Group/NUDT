@@ -13,7 +13,7 @@ from robustbench.utils import load_model, clean_accuracy
 
 from robustbench.model_zoo.enums import BenchmarkDataset, ThreatModel
 
-from torchattacks import FGSM, PGD, BIM, CW, DeepFool, GN, Jitter, Boundary, ZOO, HSJA, NES
+from torchattacks import FGSM, PGD, BIM, CW, DeepFool, MIFGSM, VMIFGSM, GN, Jitter, Boundary, ZOO, HSJA, NES
 from torchdefends import YOPO, TRADES, FREE, FAST
 from torchdetects import SS, FS, LID
 
@@ -85,6 +85,10 @@ def detect(args):
         # print(args.attack_method)
         if args.attack_method == 'fgsm':
             atk = FGSM(model, eps=args.epsilon)
+        elif args.attack_method == 'mifgsm':
+            atk = MIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay)
+        elif args.attack_method == 'vmifgsm':
+            atk = VMIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay, N=args.sampled_examples, beta=3/2)
         elif args.attack_method == 'pgd':
             atk = PGD(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
         elif args.attack_method == 'bim':
