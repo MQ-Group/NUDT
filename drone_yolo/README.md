@@ -12,10 +12,11 @@
 * ~~`data`（str 必填）: 指定数据集，支持枚举值:`kitti`, `bdd100k`, `ua-detrac`, `dawn`, `special_vehicle`, `flir_adas`。~~
 * ~~`class_number`（int 必填）: 指定目标类别数量，与数据集绑定，对于kitti数据集为`8` 。~~
 * `attack_method`（str 选填，默认为`fgsm`）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `fgsm`, `mifgsm`, `vmifgsm`, `pgd`, `bim`, `cw`, `deepfool`, `gn`, `jitter`。
-* `defend_method`（str 选填，默认为`scale`）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`scale`, `compression`, `fgsm_denoise`, `neural_cleanse`, `pgd_purifier`。
+* `defend_method`（str 选填，默认为`scale`）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`scale`, `compression`, `fgsm_denoise`, `neural_cleanse`, `pgd_purifier`, `adversarial_training`。
 * `selected_samples`（int 选填，默认为64，0表示数据集全部样本数据）: 若`process`为`adv`时有效，生成对抗样本时使用的样本数。
 * `confidence_threshold`（float 选填，默认为`0.1`）：攻击防御之后置信度变化阈值，超过该值说明攻击防御成功，若`process`为`attack`或`defend`时有效。
 * `resume_from_checkpoint`（bool 选填，默认为`False`）：是否在训练时在已有的权重基础上进行训练，若`process`为`train`时有效，支持枚举值（第一个为默认值）:`False`, `True`。
+* `adversarial_sample_proportion`（int 选填，默认为50）: 若`process`为`defend`时有效，防御训练时，训练数据集中对抗样本所占百分比，取值在（0，100）之间。
 * `epochs`（int 选填，默认为`100`）：训练迭代次数，若`process`为`train`时有效。
 * `batch`（int 选填，默认为`16`）：训练批处理大小，若`process`为`train`或`test`时有效。
 * `device`（str 选填，默认为`cpu`）：使用cpu或cuda，支持枚举值（第一个为默认值）:`cpu`, `cuda`。
@@ -38,21 +39,21 @@
 
 
 ### 攻击防御方法的有效参数
-| 参数 | fgsm | mifgsm | vmifgsm | pgd | bim | cw | deepfool | gn | jitter | scale | compression | neural_cleanse | pgd_purifier | fgsm_denoise |
-|------|------|--------|---------|-----|-----|----|----------|----|--------|-------|-------------|----------------|--------------|--------------|
-| epsilon | 1 | 1 | 1 | 1 | 1 | | | | 1 | | | | 1 | 1 |
-| step_size | | 1 | 1 | 1 | 1 | | | | 1 | | | | 1 | |
+| 参数 | fgsm | mifgsm | vmifgsm | pgd | bim | cw | deepfool | gn | jitter | scale | compression | neural_cleanse | pgd_purifier | fgsm_denoise | adversarial_training |
+|------|------|--------|---------|-----|-----|----|----------|----|--------|-------|-------------|----------------|--------------|--------------|--------------|
+| epsilon | 1 | 1 | 1 | 1 | 1 | | | | 1 | | | | 1 | 1 | |
+| step_size | | 1 | 1 | 1 | 1 | | | | 1 | | | | 1 | | |
 | max_iterations | | 1 | 1 | 1 | 1 | 1 | 1 | | 1 | | | | 1 | |
-| decay | | 1 | 1 | | | | | | | | | | | |
-| sampled_examples | | | 1 | | | | | | | | | | | |
-| random_start | | | | 1 | | | | | 1 | | | | | |
-| lr | | | | | | 1 | | | | | | | | |
-| std | | | | | | | | 1 | 1 | | | | | |
-| scale | | | | | | | | | 1 | | | | | |
-| scaling_factor | | | | | | | | | | 1 | | | | |
-| interpolate_method | | | | | | | | | | 1 | | | | |
-| image_quality | | | | | | | | | | | 1 | | | |
-| filter_kernel_size | | | | | | | | | | | | 1 | | |
+| decay | | 1 | 1 | | | | | | | | | | | | |
+| sampled_examples | | | 1 | | | | | | | | | | | | |
+| random_start | | | | 1 | | | | | 1 | | | | | | |
+| lr | | | | | | 1 | | | | | | | | | |
+| std | | | | | | | | 1 | 1 | | | | | | |
+| scale | | | | | | | | | 1 | | | | | | |
+| scaling_factor | | | | | | | | | | 1 | | | | | |
+| interpolate_method | | | | | | | | | | 1 | | | | | |
+| image_quality | | | | | | | | | | | 1 | | | | |
+| filter_kernel_size | | | | | | | | | | | | 1 | | | |
 
 
 ### 说明

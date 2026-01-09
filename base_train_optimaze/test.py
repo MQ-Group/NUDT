@@ -77,20 +77,21 @@ def test(args):
         current_loss = running_loss / (batch_i + 1)
         current_acc = 100. * correct / total
         
-        event = "test"
-        data = {
-            "message": "正在执行测试...",
-            "progress": int(batch_i/total_batch*100),
-            "log": f"[{int(batch_i/total_batch*100)}%] 正在执行测试...",
-            "details": {
-                "batch": f"{batch_i + 1}/{total_batch}",
-                "loss": f"{current_loss:.4f}", 
-                "accuracy": f"{current_acc:.2f}%", 
-                "batch_size": args.batch,
-                "image_size": inputs.shape[-1]
+        if batch_i % (total_batch // 200) == 0:
+            event = "test"
+            data = {
+                "message": "正在执行测试...",
+                "progress": int(batch_i/total_batch*100),
+                "log": f"[{int(batch_i/total_batch*100)}%] 正在执行测试...",
+                "details": {
+                    "batch": f"{batch_i + 1}/{total_batch}",
+                    "loss": f"{current_loss:.4f}", 
+                    "accuracy": f"{current_acc:.2f}%", 
+                    "batch_size": args.batch,
+                    "image_size": inputs.shape[-1]
+                }
             }
-        }
-        sse_print(event, data)
+            sse_print(event, data)
     
     
     event = "final_result"

@@ -14,12 +14,12 @@
 * `attack_method`（str 选填，默认为`fgsm`）: 指定攻击方法，若`process`为`adv`或`attack`则必填，支持枚举值（第一个为默认值）: `fgsm`, `mifgsm`, `vmifgsm`, `pgd`, `bim`, `cw`, `deepfool`, `gn` `jitter`, `boundary`, `zoo`, `hsja`, `nes`, `yopo`, `pgdrs`, `trades`, `free`, `fast`。
 * `defend_method`（str 选填，默认为`yopo`）: 指定防御方法，若`process`为`defend`则必填，支持枚举值（第一个为默认值）:`yopo`, `pgdrs`, `trades`, `free`, `fast`, `fgsm`, `mifgsm`, `vmifgsm`, `pgd`, `bim`, `cw`, `deepfool`, `gn`, `jitter`, `boundary`, `zoo`, `hsja`, `nes`。
 * `detect_method`（str 选填，默认为`spatial_smoothing`）: 指定防御方法，若`process`为`detect`则必填，支持枚举值（第一个为默认值）:`spatial_smoothing`, `feature_squeezing`, `local_intrinsic_dimensionality`。
+* `selected_samples`（int 选填，默认为64，0表示数据集全部样本数据）: 若`process`为`adv`或`detect`时有效，使用的样本数。
+* `adversarial_sample_proportion`（int 选填，默认为50）: 若`process`为`defend`时有效，防御训练时，训练数据集中对抗样本所占百分比，取值在（0，100）之间。
 * `epochs`（int 选填，默认为`100`）：训练迭代次数，若`process`为`train`时有效。
 * `batch`（int 选填，默认为`16`）：训练批处理大小，若`process`为`train`或`test`时有效。
 * `device`（str 选填，默认为`cuda`）：使用cpu或cuda，支持枚举值（第一个为默认值）:`cuda`, `cpu`。
 * `workers`（int 选填，默认为`0`）：加载数据集时workers的数量。
-* `selected_samples`（int 选填，默认为64，0表示数据集全部样本数据）: 若`process`为`adv`或`detect`时有效，使用的样本数。
-* `adversarial_sample_proportion`（int 选填，默认为50）: 若`process`为`defend`时有效，防御训练时，训练数据集中对抗样本所占百分比，取值在（0，100）之间。
 * `epsilon`（float 选填，默认为`8/255`）：扰动强度参数，控制对抗扰动大小。
 * `step_size`（float 选填，默认为`2/255`）：步长，迭代攻击的更新幅度。
 * `max_iterations`（int 选填，默认为`50`）：最大迭代次数。

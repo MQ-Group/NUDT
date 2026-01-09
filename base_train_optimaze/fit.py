@@ -88,21 +88,22 @@ def fit(args):
             current_loss = running_loss / (batch_i + 1)
             current_acc = 100. * correct / total
             
-            event = "train"
-            data = {
-                "message": "正在执行训练...",
-                "progress": int(epoch/args.epochs*100),
-                "log": f"[{int(epoch/args.epochs*100)}%] 正在执行训练...",
-                "details": {
-                    "epoch": f"{epoch + 1}/{args.epochs}",
-                    "batch": f"{batch_i + 1}/{total_batch}",
-                    "loss": f"{current_loss:.4f}", 
-                    "accuracy": f"{current_acc:.2f}%", 
-                    "batch_size": args.batch,
-                    "image_size": inputs.shape[-1]
+            if batch_i % (total_batch // 200) == 0:
+                event = "train"
+                data = {
+                    "message": "正在执行训练...",
+                    "progress": int(epoch/args.epochs*100),
+                    "log": f"[{int(epoch/args.epochs*100)}%] 正在执行训练...",
+                    "details": {
+                        "epoch": f"{epoch + 1}/{args.epochs}",
+                        "batch": f"{batch_i + 1}/{total_batch}",
+                        "loss": f"{current_loss:.4f}", 
+                        "accuracy": f"{current_acc:.2f}%", 
+                        "batch_size": args.batch,
+                        "image_size": inputs.shape[-1]
+                    }
                 }
-            }
-            sse_print(event, data)
+                sse_print(event, data)
             
     
         # 更新学习率
@@ -132,21 +133,22 @@ def fit(args):
             current_loss = running_loss / (batch_i + 1)
             current_acc = 100. * correct / total
             
-            event = "test"
-            data = {
-                "message": "正在执行测试...",
-                "progress": int(epoch/args.epochs*100),
-                "log": f"[{int(epoch/args.epochs*100)}%] 正在执行测试...",
-                "details": {
-                    "epoch": f"{epoch + 1}/{args.epochs}",
-                    "batch": f"{batch_i + 1}/{total_batch}",
-                    "loss": f"{current_loss:.4f}", 
-                    "accuracy": f"{current_acc:.2f}%", 
-                    "batch_size": args.batch,
-                    "image_size": inputs.shape[-1]
+            if batch_i % (total_batch // 200) == 0:
+                event = "test"
+                data = {
+                    "message": "正在执行测试...",
+                    "progress": int(epoch/args.epochs*100),
+                    "log": f"[{int(epoch/args.epochs*100)}%] 正在执行测试...",
+                    "details": {
+                        "epoch": f"{epoch + 1}/{args.epochs}",
+                        "batch": f"{batch_i + 1}/{total_batch}",
+                        "loss": f"{current_loss:.4f}", 
+                        "accuracy": f"{current_acc:.2f}%", 
+                        "batch_size": args.batch,
+                        "image_size": inputs.shape[-1]
+                    }
                 }
-            }
-            sse_print(event, data)
+                sse_print(event, data)
             
     
         
