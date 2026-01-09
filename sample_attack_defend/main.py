@@ -30,13 +30,13 @@ def parse_args():
     parser.add_argument('--defend_method', type=str, default='yopo', choices=['yopo', 'pgdrs', 'trades', 'free', 'fast', 'fgsm', 'mifgsm', 'vmifgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn' 'jitter', 'boundary', 'zoo', 'hsja', 'nes'], help='defend method')
     parser.add_argument('--detect_method', type=str, default='spatial_smoothing', choices=['spatial_smoothing', 'feature_squeezing', 'local_intrinsic_dimensionality'], help='detect method')
     
+    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--adversarial_sample_proportion', type=int, default=50, help='adversarial sample proportion in dataset when defend train for defend method')
+    
     parser.add_argument('--epochs', type=int, default=1, help='epochs')
     parser.add_argument('--batch', type=int, default=16, help='batch size')
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
-    
-    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
-    parser.add_argument('--adversarial_sample_proportion', type=int, default=50, help='adversarial sample proportion in dataset when defend train for defend method')
     
     parser.add_argument('--epsilon', type=float, default=8/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--step_size', type=float, default=2/255, help='step size for attack method and defend medthod')

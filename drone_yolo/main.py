@@ -18,22 +18,26 @@ def parse_args():
     # parser.add_argument('--data', type=str, default='yolo_drone_detection', choices=['yolo_drone_detection'], help='data name')
     # parser.add_argument('--class_number', type=int, default=1, choices=[1, 1000], help='number of class. 1 for yolo_drone_detection, 1000 for imagenet10')
     
-    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn', 'jitter'], help='attack method')
-    parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
+    parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'mifgsm', 'vmifgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn', 'jitter'], help='attack method')
+    parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier', 'adversarial_training'], help='defend method')
     
     parser.add_argument('--confidence_threshold', type=float, default=0.1, help='confidence threshold')
     parser.add_argument('--resume_from_checkpoint', type=bool, default=False, help='resume from checkpoint for train or fit')
+    
+    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--adversarial_sample_proportion', type=int, default=50, help='adversarial sample proportion in dataset when defend train for defend method')
     
     parser.add_argument('--epochs', type=int, default=100, help='epochs')
     parser.add_argument('--batch', type=int, default=128, help='batch size')
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=16, help='dataloader workers (per RANK if DDP)')
     
-    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
-    
     parser.add_argument('--epsilon', type=float, default=15/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--max_iterations', type=int, default=50, help='epsilon for attack method and defend medthod')
+    
+    parser.add_argument('--delay', type=float, default=1.0, help='momentum factor of mifgsm for attack method')
+    parser.add_argument('--sampled_examples', type=int, default=5, help='the number of sampled examples in the neighborhood of vmifgsm for attack method')
     
     parser.add_argument('--random_start', type=bool, default=True, help='initial random start for attack method')
     parser.add_argument('--lr', type=float, default=0.001, help='learning rate of optimization for attack method')
