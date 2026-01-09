@@ -359,7 +359,7 @@ class BaseTrainer:
             from utils.sse import sse_print
             try:
                 # print(self.model)
-                # print(args.attack_method)
+                # print(self.args.attack_method)
                 if self.args.attack_method == 'fgsm':
                     self.atk = FGSM(self.model, eps=self.args.epsilon)
                 elif self.args.attack_method == 'mifgsm':

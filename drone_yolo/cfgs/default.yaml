@@ -1,5 +1,5 @@
 task: detect
-mode: adv
+mode: defend
 model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
 epochs: 100
@@ -37,9 +37,9 @@ dropout: 0.0
 val: true
 split: val
 save_json: false
-conf: null
+conf: 0.0
 iou: 0.7
-max_det: 300
+max_det: 1
 half: false
 dnn: false
 plots: true
@@ -104,8 +104,8 @@ erasing: 0.4
 cfg: null
 tracker: botsort.yaml
 save_dir: ./output
-attack_method: fgsm
-defend_method: scale
+defend_method: adversarial_training
+attack_method: bim
 adversarial_sample_proportion: 50
 epsilon: 0.058823529411764705
 step_size: 0.00784313725490196

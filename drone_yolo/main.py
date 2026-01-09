@@ -209,8 +209,12 @@ def main(args):
         from process.attack_use_adv import attack_use_adv # 必须在'./cfgs/default.yaml'保存后import
         attack_use_adv(args)
     elif args.process == 'defend':
-        from process.defend_use_adv import defend_use_adv
-        defend_use_adv(args)
+        if args.defend_method == 'adversarial_training':
+            from process.adv_train import adv_train
+            adv_train(args)
+        else:
+            from process.defend_use_adv import defend_use_adv
+            defend_use_adv(args)
     elif args.process == 'train':
         from process.train import train
         train(args)
