@@ -42,16 +42,28 @@ def on_pretrain_routine_end(trainer):
     
 def on_train_start(trainer):
     """Called when the training starts."""
-    event = "train_start"
-    data = {
-        "message": "训练开始.",
-        "total_epoch": trainer.args.epochs,
-        "total_batch": len(trainer.train_loader),
-        "start_epoch": trainer.start_epoch,
-        "batch_size": trainer.args.batch,
-        "image_size": trainer.args.imgsz,
-    }
-    sse_print(event, data)
+    if trainer.args.defend_method == 'adversarial_training':
+        event = "adversarial_train_start"
+        data = {
+            "message": "对抗训练开始.",
+            "total_epoch": trainer.args.epochs,
+            "total_batch": len(trainer.train_loader),
+            "start_epoch": trainer.start_epoch,
+            "batch_size": trainer.args.batch,
+            "image_size": trainer.args.imgsz,
+        }
+        sse_print(event, data)
+    else:
+        event = "train_start"
+        data = {
+            "message": "训练开始.",
+            "total_epoch": trainer.args.epochs,
+            "total_batch": len(trainer.train_loader),
+            "start_epoch": trainer.start_epoch,
+            "batch_size": trainer.args.batch,
+            "image_size": trainer.args.imgsz,
+        }
+        sse_print(event, data)
 
 
 def on_train_epoch_start(trainer):
@@ -76,40 +88,75 @@ def on_before_zero_grad(trainer):
 
 def on_train_batch_end(trainer):
     """Called at the end of each training batch."""
-    event = "train"
-    data = {
-        "message": "正在执行训练...",
-        "progress": int(trainer.epoch/trainer.epochs*100),
-        "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行训练...",
-        "details": {
-            "epoch": f"{trainer.epoch + 1}/{trainer.epochs}",
-            "batch": f"{trainer.batch_i + 1}/{len(trainer.train_loader)}",
-            "GPU_memory_util": f"{trainer._get_memory():.3g}G",
-            "box_loss": trainer.loss_items[0].item(), 
-            "cls_loss": trainer.loss_items[1].item(), 
-            "df1_loss": trainer.loss_items[2].item(),
-        },
-    }
-    sse_print(event, data)
+    if trainer.batch_i % (len(trainer.train_loader) // 200) == 0:
+        if trainer.args.defend_method == 'adversarial_training':
+            event = "adversarial_train"
+            data = {
+                "message": "正在执行对抗训练...",
+                "progress": int(trainer.epoch/trainer.epochs*100),
+                "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行对抗训练...",
+                "details": {
+                    "epoch": f"{trainer.epoch + 1}/{trainer.epochs}",
+                    "batch": f"{trainer.batch_i + 1}/{len(trainer.train_loader)}",
+                    "GPU_memory_util": f"{trainer._get_memory():.3g}G",
+                    "box_loss": trainer.loss_items[0].item(), 
+                    "cls_loss": trainer.loss_items[1].item(), 
+                    "df1_loss": trainer.loss_items[2].item(),
+                },
+            }
+            sse_print(event, data)
+        else:
+            event = "train"
+            data = {
+                "message": "正在执行训练...",
+                "progress": int(trainer.epoch/trainer.epochs*100),
+                "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行训练...",
+                "details": {
+                    "epoch": f"{trainer.epoch + 1}/{trainer.epochs}",
+                    "batch": f"{trainer.batch_i + 1}/{len(trainer.train_loader)}",
+                    "GPU_memory_util": f"{trainer._get_memory():.3g}G",
+                    "box_loss": trainer.loss_items[0].item(), 
+                    "cls_loss": trainer.loss_items[1].item(), 
+                    "df1_loss": trainer.loss_items[2].item(),
+                },
+            }
+            sse_print(event, data)
 
 
 def on_train_epoch_end(trainer):
     """Called at the end of each training epoch."""
-    event = "train"
-    data = {
-        "message": "正在执行训练...",
-        "progress": int(trainer.epoch/trainer.epochs*100),
-        "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行训练...",
-        "details": {
-            "epoch": f"{trainer.epoch + 1}/{trainer.epochs}",
-            "GPU_memory_util": f"{trainer._get_memory():.3g}G",
-            "box_loss": trainer.loss_items[0].item(), 
-            "cls_loss": trainer.loss_items[1].item(), 
-            "df1_loss": trainer.loss_items[2].item(),
-            "lr": trainer.lr, 
+    if trainer.args.defend_method == 'adversarial_training':
+        event = "adversarial_train"
+        data = {
+            "message": "正在执行对抗训练...",
+            "progress": int(trainer.epoch/trainer.epochs*100),
+            "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行对抗训练...",
+            "details": {
+                "epoch": f"{trainer.epoch + 1}/{trainer.epochs}",
+                "GPU_memory_util": f"{trainer._get_memory():.3g}G",
+                "box_loss": trainer.loss_items[0].item(), 
+                "cls_loss": trainer.loss_items[1].item(), 
+                "df1_loss": trainer.loss_items[2].item(),
+                "lr": trainer.lr, 
+            }
         }
-    }
-    sse_print(event, data)
+        sse_print(event, data)
+    else:
+        event = "train"
+        data = {
+            "message": "正在执行训练...",
+            "progress": int(trainer.epoch/trainer.epochs*100),
+            "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 正在执行训练...",
+            "details": {
+                "epoch": f"{trainer.epoch + 1}/{trainer.epochs}",
+                "GPU_memory_util": f"{trainer._get_memory():.3g}G",
+                "box_loss": trainer.loss_items[0].item(), 
+                "cls_loss": trainer.loss_items[1].item(), 
+                "df1_loss": trainer.loss_items[2].item(),
+                "lr": trainer.lr, 
+            }
+        }
+        sse_print(event, data)
 
 
 def on_fit_epoch_end(trainer):
@@ -119,35 +166,64 @@ def on_fit_epoch_end(trainer):
 
 def on_model_save(trainer):
     """Called when the model is saved."""
-    event = "train"
-    data = {
-        "message": "正在执行训练...",
-        "progress": int(trainer.epoch/trainer.epochs*100),
-        "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 训练模型权重保存: {trainer.wdir}/last.pt",
-    }
-    sse_print(event, data)
+    if trainer.args.defend_method == 'adversarial_training':
+        event = "adversarial_train"
+        data = {
+            "message": "正在执行对抗训练...",
+            "progress": int(trainer.epoch/trainer.epochs*100),
+            "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 训练模型权重保存: {trainer.wdir}/last.pt",
+        }
+        sse_print(event, data)
+    else:
+        event = "train"
+        data = {
+            "message": "正在执行训练...",
+            "progress": int(trainer.epoch/trainer.epochs*100),
+            "log": f"[{int(trainer.epoch/trainer.epochs*100)}%] 训练模型权重保存: {trainer.wdir}/last.pt",
+        }
+        sse_print(event, data)
 
 
 def on_train_end(trainer):
     """Called when the training ends."""
-    event = "final_result"
-    data = {
-        "message": "训练完成, 结果信息已保存",
-        "progress": 100,
-        "log": f"[100%] 训练完成, 结果信息已保存",
-        "details": {
-            "labels_image": f"{trainer.save_dir}/labels.jpg",
-            "results_image": f"{trainer.save_dir}/results.png",
-            "results_csv": f"{trainer.save_dir}/results.csv",
-            "display_images": [f"{trainer.save_dir}/train_batch{i}.png" for i in trainer.plot_idx],
-            "weight": {
-                "last": f"{trainer.wdir}/last.pt",
-                "best": f"{trainer.wdir}/best.pt",
-            },
-            "summary": trainer.metrics,
+    if trainer.args.defend_method == 'adversarial_training':
+        event = "final_result"
+        data = {
+            "message": "对抗训练完成, 结果信息已保存",
+            "progress": 100,
+            "log": f"[100%] 对抗训练完成, 结果信息已保存",
+            "details": {
+                "labels_image": f"{trainer.save_dir}/labels.jpg",
+                "results_image": f"{trainer.save_dir}/results.png",
+                "results_csv": f"{trainer.save_dir}/results.csv",
+                "display_images": [f"{trainer.save_dir}/train_batch{i}.png" for i in trainer.plot_idx],
+                "weight": {
+                    "last": f"{trainer.wdir}/last.pt",
+                    "best": f"{trainer.wdir}/best.pt",
+                },
+                "summary": trainer.metrics,
+            }
         }
-    }
-    sse_print(event, data)
+        sse_print(event, data)
+    else:
+        event = "final_result"
+        data = {
+            "message": "训练完成, 结果信息已保存",
+            "progress": 100,
+            "log": f"[100%] 训练完成, 结果信息已保存",
+            "details": {
+                "labels_image": f"{trainer.save_dir}/labels.jpg",
+                "results_image": f"{trainer.save_dir}/results.png",
+                "results_csv": f"{trainer.save_dir}/results.csv",
+                "display_images": [f"{trainer.save_dir}/train_batch{i}.png" for i in trainer.plot_idx],
+                "weight": {
+                    "last": f"{trainer.wdir}/last.pt",
+                    "best": f"{trainer.wdir}/best.pt",
+                },
+                "summary": trainer.metrics,
+            }
+        }
+        sse_print(event, data)
 
 
 def on_params_update(trainer):
@@ -209,16 +285,17 @@ def on_val_batch_start(validator):
 def on_val_batch_end(validator):
     """Called at the end of each validation batch."""
     # print(validator.args)
-    event = "test"
-    data = {
-        "message": "正在执行测试...",
-        "progress": int(validator.batch_i/len(validator.dataloader)*100),
-        "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 正在执行测试...",
-        "details": {
-            "batch": f"{validator.batch_i + 1}/{len(validator.dataloader)}",
-        },
-    }
-    sse_print(event, data)
+    if validator.batch_i % (len(validator.dataloader) // 200) == 0:
+        event = "test"
+        data = {
+            "message": "正在执行测试...",
+            "progress": int(validator.batch_i/len(validator.dataloader)*100),
+            "log": f"[{int(validator.batch_i/len(validator.dataloader)*100)}%] 正在执行测试...",
+            "details": {
+                "batch": f"{validator.batch_i + 1}/{len(validator.dataloader)}",
+            },
+        }
+        sse_print(event, data)
 
 
 def on_val_end(validator):

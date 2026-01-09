@@ -49,9 +49,9 @@ def adv(args):
         if args.attack_method == 'fgsm':
             atk = FGSM(yolo.model, eps=args.epsilon)
         elif args.attack_method == 'mifgsm':
-            atk = MIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay)
+            atk = MIFGSM(yolo.model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay)
         elif args.attack_method == 'vmifgsm':
-            atk = VMIFGSM(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay, N=args.sampled_examples, beta=3/2)
+            atk = VMIFGSM(yolo.model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, decay=args.decay, N=args.sampled_examples, beta=3/2)
         elif args.attack_method == 'pgd':
             atk = PGD(yolo.model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
         elif args.attack_method == 'bim':

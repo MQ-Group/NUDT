@@ -22,7 +22,7 @@ def parse_args():
     
     parser.add_argument('--epochs', type=int, default=1, help='epochs')
     parser.add_argument('--batch', type=int, default=16, help='batch size')
-    parser.add_argument('--device', type=str, default='cpu', choices=['cpu', 'cuda'], help='device')
+    parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=0, help='dataloader workers (per RANK if DDP)')
     parser.add_argument('--optimizer', type=str, default='adam', choices=['sgd', 'adam', 'adamw', 'rmsprop', 'adagrad', 'adadelta', 'adamax', 'nadam', 'radam', 'lbfgs', 'sgd_nesterov', 'asgd', 'rprop'], help='optimizer type')
     parser.add_argument('--scheduler', type=str, default='steplr', choices=['steplr', 'multisteplr', 'exponential', 'cosine', 'cyclic', 'onecycle', 'lambda', 'cosine_warm'], help='learning rate scheduler type')

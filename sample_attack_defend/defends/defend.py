@@ -188,21 +188,22 @@ def defend(args):
             current_loss = running_loss / (batch_i + 1)
             current_acc = 100. * correct / total
             
-            event = "defend_train"
-            data = {
-                "message": "正在执行防御训练...",
-                "progress": int(epoch/args.epochs*100),
-                "log": f"[{int(epoch/args.epochs*100)}%] 正在防御执行训练...",
-                "details": {
-                    "epoch": f"{epoch + 1}/{args.epochs}",
-                    "batch": f"{batch_i + 1}/{total_batch}",
-                    "loss": f"{current_loss:.4f}", 
-                    "accuracy": f"{current_acc:.2f}%", 
-                    "batch_size": args.batch,
-                    "image_size": images.shape[-1]
+            if batch_i % (total_batch // 200) == 0:
+                event = "defend_train"
+                data = {
+                    "message": "正在执行防御训练...",
+                    "progress": int(epoch/args.epochs*100),
+                    "log": f"[{int(epoch/args.epochs*100)}%] 正在防御执行训练...",
+                    "details": {
+                        "epoch": f"{epoch + 1}/{args.epochs}",
+                        "batch": f"{batch_i + 1}/{total_batch}",
+                        "loss": f"{current_loss:.4f}", 
+                        "accuracy": f"{current_acc:.2f}%", 
+                        "batch_size": args.batch,
+                        "image_size": images.shape[-1]
+                    }
                 }
-            }
-            sse_print(event, data)
+                sse_print(event, data)
     
     model_weight_save_path = f"{args.output_path}/defend_trained_{args.model_name}.pt"
     torch.save(model.state_dict(), model_weight_save_path)

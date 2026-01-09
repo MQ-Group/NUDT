@@ -86,7 +86,7 @@ def add_args(args):
     data_name = os.path.splitext(os.path.basename(data_yaml))[0]
     # print(data_name)
     args.data_name = data_name
-    if args.process == 'attack' or args.process == 'defend' or args.process == 'predict':
+    if args.process == 'attack' or (args.process == 'defend' and args.defend_method != 'adversarial_training') or args.process == 'predict':
         data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
     else:
         data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
@@ -94,6 +94,21 @@ def add_args(args):
     
     return args
 
+def add_cfg(args, cfg): # 为了对抗训练
+    cfg.attack_method = args.attack_method
+    cfg.defend_method = args.defend_method
+    cfg.adversarial_sample_proportion = args.adversarial_sample_proportion
+    cfg.epsilon = args.epsilon
+    cfg.step_size = args.step_size
+    cfg.max_iterations = args.max_iterations
+    cfg.delay = args.delay
+    cfg.sampled_examples = args.sampled_examples
+    cfg.random_start = args.random_start
+    cfg.lr = args.lr
+    cfg.std = args.std
+    # cfg.scale = args.scale #  冲突了 ValueError: 'scale=10' is an invalid value. Valid 'scale' values are between 0.0 and 1.0.
+    
+    return cfg
 
 def yolo_cfg(args):
 
@@ -169,6 +184,7 @@ def yolo_cfg(args):
         # dont need modify cfg
         pass
     
+    cfg = add_cfg(args, cfg)
     
     # print(cfg)
     cfg = dict(cfg)

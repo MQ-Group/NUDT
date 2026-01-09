@@ -19,17 +19,18 @@ def parse_args():
     # parser.add_argument('--class_number', type=int, default=1, choices=[1, 1000], help='number of class. 1 for yolo_drone_detection, 1000 for imagenet10')
     
     parser.add_argument('--attack_method', type=str, default='fgsm', choices=['fgsm', 'mifgsm', 'vmifgsm', 'pgd', 'bim', 'cw', 'deepfool', 'gn', 'jitter'], help='attack method')
-    parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier'], help='defend method')
+    parser.add_argument('--defend_method', type=str, default='scale', choices=['scale', 'compression', 'fgsm_denoise', 'neural_cleanse', 'pgd_purifier', 'adversarial_training'], help='defend method')
     
     parser.add_argument('--confidence_threshold', type=float, default=0.1, help='confidence threshold')
     parser.add_argument('--resume_from_checkpoint', type=bool, default=False, help='resume from checkpoint for train or fit')
+    
+    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
+    parser.add_argument('--adversarial_sample_proportion', type=int, default=50, help='adversarial sample proportion in dataset when defend train for defend method')
     
     parser.add_argument('--epochs', type=int, default=100, help='epochs')
     parser.add_argument('--batch', type=int, default=128, help='batch size')
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=16, help='dataloader workers (per RANK if DDP)')
-    
-    parser.add_argument('--selected_samples', type=int, default=64, help='the number of generated adversarial sample for attack method')
     
     parser.add_argument('--epsilon', type=float, default=15/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
@@ -89,7 +90,7 @@ def add_args(args):
     data_name = os.path.splitext(os.path.basename(data_yaml))[0]
     # print(data_name)
     args.data_name = data_name
-    if args.process == 'attack' or args.process == 'defend' or args.process == 'predict':
+    if args.process == 'attack' or (args.process == 'defend' and args.defend_method != 'adversarial_training') or args.process == 'predict':
         data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
     else:
         data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
@@ -98,6 +99,22 @@ def add_args(args):
     return args
 
 
+def add_cfg(args, cfg): # 为了对抗训练
+    cfg.attack_method = args.attack_method
+    cfg.defend_method = args.defend_method
+    cfg.adversarial_sample_proportion = args.adversarial_sample_proportion
+    cfg.epsilon = args.epsilon
+    cfg.step_size = args.step_size
+    cfg.max_iterations = args.max_iterations
+    cfg.delay = args.delay
+    cfg.sampled_examples = args.sampled_examples
+    cfg.random_start = args.random_start
+    cfg.lr = args.lr
+    cfg.std = args.std
+    # cfg.scale = args.scale #  冲突了 ValueError: 'scale=10' is an invalid value. Valid 'scale' values are between 0.0 and 1.0.
+    
+    return cfg
+    
 def yolo_cfg(args):
 
     model_cfg = load_yaml(args.model_yaml)
@@ -179,6 +196,7 @@ def yolo_cfg(args):
         # dont need modify cfg
         pass
     
+    cfg = add_cfg(args, cfg)
     
     # print(cfg)
     cfg = dict(cfg)
@@ -199,8 +217,12 @@ def main(args):
         from process.attack_use_adv import attack_use_adv # 必须在'./cfgs/default.yaml'保存后import
         attack_use_adv(args)
     elif args.process == 'defend':
-        from process.defend_use_adv import defend_use_adv
-        defend_use_adv(args)
+        if args.defend_method == 'adversarial_training':
+            from process.adv_train import adv_train
+            adv_train(args)
+        else:
+            from process.defend_use_adv import defend_use_adv
+            defend_use_adv(args)
     elif args.process == 'train':
         from process.train import train
         train(args)

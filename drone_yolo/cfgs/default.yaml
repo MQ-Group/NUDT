@@ -1,5 +1,5 @@
 task: detect
-mode: defend
+mode: adv
 model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
 epochs: 100
@@ -37,9 +37,9 @@ dropout: 0.0
 val: true
 split: val
 save_json: false
-conf: 0.0
+conf: null
 iou: 0.7
-max_det: 1
+max_det: 300
 half: false
 dnn: false
 plots: true
@@ -104,4 +104,3 @@ erasing: 0.4
 cfg: null
 tracker: botsort.yaml
 save_dir: ./output
-defend_method: scale

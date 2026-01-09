@@ -47,19 +47,46 @@ class LeNet5(nn.Module):
         return x
 
 
+def _normalize_model_name(name: str) -> str:
+    return name.replace('-', '').replace('_', '').lower()
+
+
 def get_model(model_name, num_classes=10):
-    if model_name == 'vgg16':
+    normalized_name = _normalize_model_name(model_name)
+
+    if normalized_name == 'vgg16':
         model = models.vgg16(weights=None)
-        model.classifier[6] = nn.Linear(4096, num_classes)
-    elif model_name == 'resnet50':
+        model.classifier[6] = nn.Linear(model.classifier[6].in_features, num_classes)
+    elif normalized_name == 'resnet50':
         model = models.resnet50(weights=None)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
-    elif model_name == 'inception_v3':
+    elif normalized_name == 'inceptionv3':
         model = models.inception_v3(weights=None, aux_logits=True)
         model.AuxLogits.fc = nn.Linear(model.AuxLogits.fc.in_features, num_classes)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
-    elif model_name == 'lenet':
-        model = LeNet5()
+    elif normalized_name == 'lenet':
+        model = LeNet5(num_classes=num_classes)
+    elif normalized_name == 'fasterrcnn':
+        model = models.efficientnet_b0(weights=None)
+        model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+    elif normalized_name == 'ssd':
+        model = models.efficientnet_v2_s(weights=None)
+        model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+    elif normalized_name == 'vggface':
+        model = models.wide_resnet50_2(weights=None)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
+    elif normalized_name == 'facenet':
+        model = models.mobilenet_v2(weights=None)
+        model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+    elif normalized_name == 'sphereface':
+        model = models.mobilenet_v3_large(weights=None)
+        model.classifier[-1] = nn.Linear(model.classifier[-1].in_features, num_classes)
+    elif normalized_name == 'arcface':
+        model = models.densenet201(weights=None)
+        model.classifier = nn.Linear(model.classifier.in_features, num_classes)
+    elif normalized_name == 'deepface':
+        model = models.regnet_y_400mf(weights=None)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
     else:
         raise ValueError(f"Unsupported model: {model_name}")
 
