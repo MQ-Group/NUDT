@@ -354,52 +354,53 @@ class BaseTrainer:
         self.run_callbacks("on_pretrain_routine_end")
         
         ###########################################################################################
-        from torchattacks import FGSM, MIFGSM, VMIFGSM, PGD, BIM, CW, DeepFool, GN, Jitter
-        from utils.sse import sse_print
-        try:
-            print(self.model)
-            # print(args.attack_method)
-            if self.args.attack_method == 'fgsm':
-                self.atk = FGSM(self.model, eps=self.args.epsilon)
-            elif args.attack_method == 'mifgsm':
-                self.atk = MIFGSM(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, decay=self.args.decay)
-            elif self.args.attack_method == 'vmifgsm':
-                self.atk = VMIFGSM(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, decay=self.args.decay, N=self.args.sampled_examples, beta=3/2)
-            elif self.args.attack_method == 'pgd':
-                self.atk = PGD(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, random_start=self.args.random_start)
-            elif self.args.attack_method == 'bim':
-                self.atk = BIM(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations)
-            elif self.args.attack_method == 'cw':
-                self.atk = CW(self.model, c=1, kappa=0, steps=self.args.max_iterations, lr=self.args.lr)
-            elif self.args.attack_method == 'deepfool':
-                # atk = DeepFool(self.model, steps=self.args.max_iterations, overshoot=0.02)
-                self.atk = CW(self.model, c=1, kappa=0, steps=self.args.max_iterations, lr=self.args.lr)
-            elif args.attack_method == 'gn':
-                self.atk = GN(self.model, std=self.args.std)
-            elif self.args.attack_method == 'jitter':
-                # atk = Jitter(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, scale=self.args.scale, std=self.args.std, random_start=self.args.random_start)
-                self.atk = PGD(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, random_start=self.args.random_start)
-            else:
-                raise ValueError('不支持的攻击方法.')
+        if self.args.defend_method == 'adversarial_training':
+            from torchattacks import FGSM, MIFGSM, VMIFGSM, PGD, BIM, CW, DeepFool, GN, Jitter
+            from utils.sse import sse_print
+            try:
+                # print(self.model)
+                # print(args.attack_method)
+                if self.args.attack_method == 'fgsm':
+                    self.atk = FGSM(self.model, eps=self.args.epsilon)
+                elif self.args.attack_method == 'mifgsm':
+                    self.atk = MIFGSM(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, decay=self.args.decay)
+                elif self.args.attack_method == 'vmifgsm':
+                    self.atk = VMIFGSM(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, decay=self.args.decay, N=self.args.sampled_examples, beta=3/2)
+                elif self.args.attack_method == 'pgd':
+                    self.atk = PGD(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, random_start=self.args.random_start)
+                elif self.args.attack_method == 'bim':
+                    self.atk = BIM(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations)
+                elif self.args.attack_method == 'cw':
+                    self.atk = CW(self.model, c=1, kappa=0, steps=self.args.max_iterations, lr=self.args.lr)
+                elif self.args.attack_method == 'deepfool':
+                    # atk = DeepFool(self.model, steps=self.args.max_iterations, overshoot=0.02)
+                    self.atk = CW(self.model, c=1, kappa=0, steps=self.args.max_iterations, lr=self.args.lr)
+                elif self.args.attack_method == 'gn':
+                    self.atk = GN(self.model, std=self.args.std)
+                elif self.args.attack_method == 'jitter':
+                    # atk = Jitter(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, scale=self.args.scale, std=self.args.std, random_start=self.args.random_start)
+                    self.atk = PGD(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, random_start=self.args.random_start)
+                else:
+                    raise ValueError('不支持的攻击方法.')
 
-            event = "defend_init"
-            data = {
-                "status": "success",
-                "message": "防御初始化完成.",
-                "attack_method": self.args.attack_method
-            }
-            sse_print(event, data)
-        except Exception as e:
-            event = "defend_init"
-            data = {
-                "status": "failure",
-                "message": f"{e}",
-                "attack_method": self.args.attack_method
-            }
-            sse_print(event, data) 
-            import sys
-            sys.exit()
-        ###########################################################################################
+                event = "defend_init"
+                data = {
+                    "status": "success",
+                    "message": "防御初始化完成.",
+                    "attack_method": self.args.attack_method
+                }
+                sse_print(event, data)
+            except Exception as e:
+                event = "defend_init"
+                data = {
+                    "status": "failure",
+                    "message": f"{e}",
+                    "attack_method": self.args.attack_method
+                }
+                sse_print(event, data) 
+                import sys
+                sys.exit()
+            ###########################################################################################
 
     def _do_train(self):
         """Train the model with the specified world size."""
