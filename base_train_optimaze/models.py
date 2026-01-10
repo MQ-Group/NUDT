@@ -61,8 +61,7 @@ def get_model(model_name, num_classes=10):
         model = models.resnet50(weights=None)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif normalized_name == 'inceptionv3':
-        model = models.inception_v3(weights=None, aux_logits=True)
-        model.AuxLogits.fc = nn.Linear(model.AuxLogits.fc.in_features, num_classes)
+        model = models.inception_v3(weights=None, aux_logits=False)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif normalized_name == 'lenet':
         model = LeNet5(num_classes=num_classes)
@@ -70,8 +69,8 @@ def get_model(model_name, num_classes=10):
         model = models.efficientnet_b0(weights=None)
         model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
     elif normalized_name == 'ssd':
-        model = models.efficientnet_v2_s(weights=None)
-        model.classifier[1] = nn.Linear(model.classifier[1].in_features, num_classes)
+        model = models.shufflenet_v2_x0_5(weights=None)
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
     elif normalized_name == 'vggface':
         model = models.wide_resnet50_2(weights=None)
         model.fc = nn.Linear(model.fc.in_features, num_classes)

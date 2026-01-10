@@ -114,6 +114,7 @@ def train(args):
         "progress": 100,
         "log": f"[100%] 训练执行完成.",
         "details": {
+            "data_name": args.data_name,
             "model_name": args.model_name,
             "checkpoint": model_weight_save_path, 
             "loss": f"{current_loss:.4f}", 
