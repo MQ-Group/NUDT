@@ -154,12 +154,8 @@ def defend(args):
         }
         sse_print(event, data)    
     
+    total_batch = len(train_loader)
     for epoch in range(args.epochs):
-        # 记录训练统计信息
-        running_loss = 0.0
-        correct = 0
-        total = 0
-        total_batch = len(train_loader)
         for batch_i, batch_data in enumerate(train_loader):
             images, labels = batch_data
             # print(images.shape)
@@ -181,14 +177,13 @@ def defend(args):
             optimizer.step()
             
             # 统计信息
-            running_loss += loss.item()
             _, predicted = torch.max(outputs, 1)
-            total += labels.size(0)
-            correct += (predicted == labels).sum().item()
-            current_loss = running_loss / (batch_i + 1)
-            current_acc = 100. * correct / total
+            total = labels.size(0)
+            correct = (predicted == labels).sum().item()
+            accuracy = 100. * correct / total
             
-            if batch_i % (total_batch // 200) == 0:
+            import math
+            if batch_i % math.ceil(total_batch / 200.0) == 0:
                 event = "defend_train"
                 data = {
                     "message": "正在执行防御训练...",
@@ -197,8 +192,8 @@ def defend(args):
                     "details": {
                         "epoch": f"{epoch + 1}/{args.epochs}",
                         "batch": f"{batch_i + 1}/{total_batch}",
-                        "loss": f"{current_loss:.4f}", 
-                        "accuracy": f"{current_acc:.2f}%", 
+                        "loss": f"{loss.item():.4f}", 
+                        "accuracy": f"{accuracy:.2f}%", 
                         "batch_size": args.batch,
                         "image_size": images.shape[-1]
                     }
@@ -217,8 +212,11 @@ def defend(args):
         "log": f"[100%] 防御训练执行完成.",
         "details": {
             "defend_method": args.defend_method,
-            "loss": f"{current_loss:.4f}", 
-            "accuracy": f"{current_acc:.2f}%"
+            "model_name": args.model_name,
+            "checkpoint": model_weight_save_path,
+            "eopchs": args.epochs, 
+            "batch_size": args.batch,
+            "learning_rate": optimizer.param_groups[0]['lr']
         }
     }
     sse_print(event, data)

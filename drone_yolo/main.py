@@ -150,7 +150,11 @@ def yolo_cfg(args):
         cfg.max_det = 1 # 一张图像只存在一个无人机，但可能检测出多个
     elif args.process == 'defend':
         cfg.mode = 'defend'
-        cfg.batch = 1
+        if args.defend_method == 'adversarial_training':
+            cfg.epochs = args.epochs
+            cfg.batch = args.batch
+        else:
+            cfg.batch = 1
         cfg.workers = args.workers
         cfg.device = args.device if args.device == 'cpu' else -1
         cfg.pretrained = args.model_path

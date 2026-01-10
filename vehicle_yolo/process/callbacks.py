@@ -88,7 +88,8 @@ def on_before_zero_grad(trainer):
 
 def on_train_batch_end(trainer):
     """Called at the end of each training batch."""
-    if trainer.batch_i % (len(trainer.train_loader) // 200) == 0:
+    import math
+    if trainer.batch_i % math.ceil(len(trainer.train_loader) / 200.0) == 0:
         if trainer.args.defend_method == 'adversarial_training':
             event = "adversarial_train"
             data = {
@@ -285,7 +286,8 @@ def on_val_batch_start(validator):
 def on_val_batch_end(validator):
     """Called at the end of each validation batch."""
     # print(validator.args)
-    if validator.batch_i % (len(validator.dataloader) // 200) == 0:
+    import math
+    if validator.batch_i % math.ceil(len(validator.dataloader) / 200.0) == 0:
         event = "test"
         data = {
             "message": "正在执行测试...",

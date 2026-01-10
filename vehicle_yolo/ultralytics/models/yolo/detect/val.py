@@ -327,7 +327,6 @@ class DetectionValidator(BaseValidator):
             batch (dict[str, Any]): Batch containing images and annotations.
             ni (int): Batch index.
         """
-        
         plot_images(
             labels=batch,
             paths=batch["im_file"],

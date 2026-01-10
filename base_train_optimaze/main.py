@@ -150,13 +150,6 @@ def add_args(args):
     return args
 
 
-def load_yaml(args):
-    config = load_yaml(args.cfg)
-    config.update(vars(args))  # override the configuration using the value in args
-
-    return EasyDict(config)
-
-
 def main(args):
     args = add_args(args)
     if args.process == 'train':

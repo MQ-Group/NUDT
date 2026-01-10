@@ -62,9 +62,9 @@ def test(args):
         inputs, labels = inputs.to(device), labels.to(device)
         
         # 对于CIFAR等小尺寸数据集，需要resize到224x224（大多数预训练模型需要）
-        if inputs.shape[-1] != 224:
-            import torch.nn.functional as F
-            inputs = F.interpolate(inputs, size=(224, 224), mode='bilinear', align_corners=False)
+        # if inputs.shape[-1] != 224:
+        #     import torch.nn.functional as F
+        #     inputs = F.interpolate(inputs, size=(224, 224), mode='bilinear', align_corners=False)
                 
         outputs = model(inputs)
         loss = loss_fn(outputs, labels)
@@ -77,7 +77,8 @@ def test(args):
         current_loss = running_loss / (batch_i + 1)
         current_acc = 100. * correct / total
         
-        if batch_i % (total_batch // 200) == 0:
+        import math
+        if batch_i % math.ceil(total_batch / 200.0) == 0:
             event = "test"
             data = {
                 "message": "正在执行测试...",
