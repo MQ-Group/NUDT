@@ -155,6 +155,7 @@ def yolo_cfg(args):
         if args.defend_method == 'adversarial_training':
             cfg.epochs = args.epochs
             cfg.batch = args.batch
+            cfg.val = False # run validation/testing during training
         else:
             cfg.batch = 1
         cfg.workers = args.workers
