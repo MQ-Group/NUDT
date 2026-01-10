@@ -156,6 +156,10 @@ def defend(args):
     
     total_batch = len(train_loader)
     for epoch in range(args.epochs):
+        # 记录训练统计信息
+        running_loss = 0.0
+        correct = 0
+        total = 0
         for batch_i, batch_data in enumerate(train_loader):
             images, labels = batch_data
             # print(images.shape)
@@ -177,10 +181,12 @@ def defend(args):
             optimizer.step()
             
             # 统计信息
+            running_loss += loss.item()
             _, predicted = torch.max(outputs, 1)
-            total = labels.size(0)
-            correct = (predicted == labels).sum().item()
-            accuracy = 100. * correct / total
+            total += labels.size(0)
+            correct += (predicted == labels).sum().item()
+            current_loss = running_loss / (batch_i + 1)
+            current_acc = 100. * correct / total
             
             import math
             if batch_i % math.ceil(total_batch / 200.0) == 0:
@@ -192,10 +198,10 @@ def defend(args):
                     "details": {
                         "epoch": f"{epoch + 1}/{args.epochs}",
                         "batch": f"{batch_i + 1}/{total_batch}",
-                        "loss": f"{loss.item():.4f}", 
-                        "accuracy": f"{accuracy:.2f}%", 
+                        "loss": f"{current_loss:.4f}", 
+                        "accuracy": f"{current_acc:.2f}%", 
                         "batch_size": args.batch,
-                        "image_size": images.shape[-1]
+                        "image_size": inputs.shape[-1]
                     }
                 }
                 sse_print(event, data)
@@ -213,7 +219,9 @@ def defend(args):
         "details": {
             "defend_method": args.defend_method,
             "model_name": args.model_name,
-            "checkpoint": model_weight_save_path,
+            "checkpoint": model_weight_save_path, 
+            "loss": f"{current_loss:.4f}", 
+            "accuracy": f"{current_acc:.2f}%",
             "eopchs": args.epochs, 
             "batch_size": args.batch,
             "learning_rate": optimizer.param_groups[0]['lr']
