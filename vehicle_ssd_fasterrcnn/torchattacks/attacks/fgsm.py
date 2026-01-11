@@ -51,13 +51,13 @@ class FGSM(Attack):
         images_list = [images[i] for i in range(images.shape[0])]
         self.model.train() # train才会求loss
         loss_dict = self.model(images_list, targets)
-
+        
         # Calculate loss
         if self.targeted:
             cost = -loss(outputs, target_labels)
         else:
             # cost = loss(outputs, labels)
-            cost = loss_dict['bbox_regression'] + loss_dict['classification']
+            cost = sum(loss for loss in loss_dict.values())
 
         # Update adversarial images
         grad = torch.autograd.grad(

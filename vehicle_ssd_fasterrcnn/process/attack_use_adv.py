@@ -13,13 +13,7 @@ from sse.sse import sse_print
 def attack_use_adv(args):
     device = args.device
     
-    classes = [
-            '__background__',  # 索引 0 保留给背景
-            'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
-            'bus', 'car', 'cat', 'chair', 'cow',
-            'diningtable', 'dog', 'horse', 'motorbike', 'person',
-            'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-        ]
+    classes = args.classes
     
     if args.model_name == 'ssd':
         model = ssd300_vgg16(
@@ -28,13 +22,12 @@ def attack_use_adv(args):
             num_classes=len(classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            score_thresh=0.1,
-            nms_thresh=0.45,
-            # detections_per_img=200,
-            detections_per_img=2,
-            iou_thresh=0.5,
-            topk_candidates=400,
-            positive_fraction=0.25,
+            score_thresh=args.score_thresh,
+            nms_thresh=args.nms_thresh,
+            detections_per_img=args.detections_per_img,
+            iou_thresh=args.iou_thresh,
+            topk_candidates=args.topk_candidates,
+            positive_fraction=args.positive_fraction,
         )
     else:
         model = fasterrcnn_resnet50_fpn(
@@ -43,13 +36,13 @@ def attack_use_adv(args):
             num_classes=len(classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            box_score_thresh=0.05,
-            box_nms_thresh=0.5,
-            box_detections_per_img=100,
-            box_fg_iou_thresh=0.5,
-            box_bg_iou_thresh=0.5,
+            box_score_thresh=args.score_thresh,
+            box_nms_thresh=args.nms_thresh,
+            box_detections_per_img=args.detections_per_img,
+            box_fg_iou_thresh=args.iou_thresh,
+            box_bg_iou_thresh=args.iou_thresh,
             box_batch_size_per_image=512,
-            box_positive_fraction=0.25,
+            box_positive_fraction=args.positive_fraction,
             bbox_reg_weights=None,
         )
     
@@ -147,22 +140,23 @@ def attack_use_adv(args):
         ori_img_path = f"{ori_images_flod}/ori_img_{i}_obj_{actual_object_number}_pred_obj_{ori_pred_cls.nelement()}.jpg"
         adv_img_path = f"{adv_images_flod}/adv_img_{i}_obj_{actual_object_number}_pred_obj_{adv_pred_cls.nelement()}.jpg"
 
-        ori_labels = [classes[i] for i in ori_predictions[0]["labels"]]
-        adv_labels = [classes[i] for i in adv_predictions[0]["labels"]]
+
+        ori_labels = [classes[ori_predictions[0]["labels"][i]]+f" {score:.2f}" for i, score in enumerate(ori_predictions[0]['scores'])]
+        adv_labels = [classes[adv_predictions[0]["labels"][i]]+f" {score:.2f}" for i, score in enumerate(adv_predictions[0]['scores'])]
         ori_images = draw_bounding_boxes(
-                                ori_images, 
+                                image=ori_images, 
                                 boxes=ori_predictions[0]["boxes"],
                                 labels=ori_labels,
                                 colors="red",
-                                width=2,
-                                font_size=16)
+                                width=1,
+                                font_size=32)
         adv_images = draw_bounding_boxes(
-                                adv_images, 
+                                image=adv_images, 
                                 boxes=adv_predictions[0]["boxes"],
                                 labels=adv_labels,
                                 colors="red",
-                                width=2,
-                                font_size=16)
+                                width=1,
+                                font_size=32)
         
         to_pil = transforms.ToPILImage()
         pil_image = to_pil(ori_images)

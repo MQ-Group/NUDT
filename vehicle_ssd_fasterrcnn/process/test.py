@@ -51,13 +51,12 @@ def test(args):
             num_classes=len(test_dataset.classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            score_thresh=0.1,
-            nms_thresh=0.45,
-            # detections_per_img=200,
-            detections_per_img=2,
-            iou_thresh=0.5,
-            topk_candidates=400,
-            positive_fraction=0.25,
+            score_thresh=args.score_thresh,
+            nms_thresh=args.nms_thresh,
+            detections_per_img=args.detections_per_img,
+            iou_thresh=args.iou_thresh,
+            topk_candidates=args.topk_candidates,
+            positive_fraction=args.positive_fraction,
         )
     else:
         model = fasterrcnn_resnet50_fpn(
@@ -66,13 +65,13 @@ def test(args):
             num_classes=len(test_dataset.classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            box_score_thresh=0.05,
-            box_nms_thresh=0.5,
-            box_detections_per_img=100,
-            box_fg_iou_thresh=0.5,
-            box_bg_iou_thresh=0.5,
+            box_score_thresh=args.score_thresh,
+            box_nms_thresh=args.nms_thresh,
+            box_detections_per_img=args.detections_per_img,
+            box_fg_iou_thresh=args.iou_thresh,
+            box_bg_iou_thresh=args.iou_thresh,
             box_batch_size_per_image=512,
-            box_positive_fraction=0.25,
+            box_positive_fraction=args.positive_fraction,
             bbox_reg_weights=None,
         )
     
@@ -92,8 +91,6 @@ def test(args):
     total_batch = len(test_loader)
     
     total_loss = 0
-    total_class_loss = 0
-    total_boxes_loss = 0
     total_scores = 0
     for batch_i, (images, targets) in enumerate(test_loader):
         # print(len(images))
@@ -109,7 +106,9 @@ def test(args):
         
         model.train()
         loss_dict = model(images=images, targets=targets) # images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
-        loss = loss_dict['bbox_regression'] + loss_dict['classification']
+        # print(loss_dict) # ssd 和 fasterrcnn不一样
+        loss = sum(loss for loss in loss_dict.values())
+        total_loss += loss.item()
         
         model.eval()
         predictions = model(images=images, targets=None)
@@ -122,9 +121,6 @@ def test(args):
         scores = sum([predictions[i]['scores'].mean() for i in range(len(predictions))]) / args.batch
         total_scores += scores.item()
         
-        total_loss += loss.item()
-        total_boxes_loss += loss_dict['bbox_regression'].item()
-        total_class_loss += loss_dict['classification'].item()
         
         import math
         if batch_i % math.ceil(total_batch / 200.0) == 0:
@@ -135,9 +131,10 @@ def test(args):
                 "log": f"[{int(batch_i/total_batch*100)}%] 正在执行测试...",
                 "details": {
                     "batch": f"{batch_i + 1}/{total_batch}",
-                    "loss": f"{loss.item():.4f}", 
-                    "box_loss": f"{loss_dict['bbox_regression'].item():.4f}", 
-                    "class_loss": f"{loss_dict['classification'].item():.4f}", 
+                    "total_loss": f"{loss.item():.4f}", 
+                    "loss": {
+                        key: f"{val.item():.4f}" for key, val in loss_dict.items()
+                    },
                     "confidence": f"{scores.item():.4f}", 
                     "batch_size": args.batch,
                     "image_size": images[0].shape[-1]
@@ -153,8 +150,6 @@ def test(args):
         "log": f"[100%] 测试执行完成.",
         "details": {
             "avg_loss": f"{total_loss/total_batch:.4f}", 
-            "avg_boxes_loss": f"{total_boxes_loss/total_batch:.4f}", 
-            "avg_class_loss": f"{total_class_loss/total_batch:.4f}", 
             "avg_confidence": f"{total_scores/total_batch:.4f}"
         }
     }

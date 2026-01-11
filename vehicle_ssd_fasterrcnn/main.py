@@ -5,6 +5,9 @@ import glob
 
 from sse.sse import sse_input_path_validated, sse_output_path_validated
 
+from torchvision.models._meta import _COCO_CATEGORIES
+from torchvision.models._meta import _VOC_CATEGORIES
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser = argparse.ArgumentParser()
@@ -29,6 +32,14 @@ def parse_args():
     parser.add_argument('--batch', type=int, default=128, help='batch size')
     parser.add_argument('--device', type=str, default='cuda', choices=['cpu', 'cuda'], help='device')
     parser.add_argument('--workers', type=int, default=16, help='dataloader workers (per RANK if DDP)')
+    
+    parser.add_argument('--classes', type=list, default=_COCO_CATEGORIES, choices=[_COCO_CATEGORIES, _VOC_CATEGORIES], help='dataset classes list')
+    parser.add_argument('--score_thresh', type=float, default=0.1, help='score threshold used for postprocessing the detections')
+    parser.add_argument('--nms_thresh', type=float, default=0.1, help='NMS threshold used for postprocessing the detections')
+    parser.add_argument('--iou_thresh', type=float, default=0.1, help='minimum IoU between the anchor and the GT box so that they can be considered as positive during training')
+    parser.add_argument('--detections_per_img', type=int, default=5, help='number of best detections to keep after NMS')
+    parser.add_argument('--topk_candidates', type=int, default=10, help='number of best detections to keep before NMS')
+    parser.add_argument('--positive_fraction', type=float, default=0.25, help='a number between 0 and 1 which indicates the proportion of positive proposals used during the training of the classification head. It is used to estimate the negative to positive ratio')
     
     parser.add_argument('--epsilon', type=float, default=15/255, help='epsilon for attack method and defend medthod')
     parser.add_argument('--step_size', type=float, default=2/255, help='epsilon for attack method and defend medthod')
@@ -68,7 +79,8 @@ def type_switch(environ_value, value):
         return float(environ_value)
     elif isinstance(value, str):
         return environ_value
-    
+    elif isinstance(value, list):
+        return environ_value
     
 def add_args(args):
     model_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.yaml'))[0]
@@ -78,7 +90,7 @@ def add_args(args):
     # print(model_name)
     args.model_name = model_name
     if args.process != 'train' or (args.process == 'train' and args.resume_from_checkpoint):
-        model_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pt'))[0]
+        model_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/model', '*/'), '*.pth'))[0]
         # print(model_path)
         args.model_path = model_path
     

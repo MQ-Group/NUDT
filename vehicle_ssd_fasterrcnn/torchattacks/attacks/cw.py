@@ -90,8 +90,7 @@ class CW(Attack):
                 f_loss = self.f(outputs, target_labels).sum()
             else:
                 # f_loss = self.f(outputs, labels).sum()
-                loss = loss_dict['bbox_regression'] + loss_dict['classification']
-                f_loss = loss.mean()
+                f_loss = sum(loss for loss in loss_dict.values())
 
             cost = L2_loss + self.c * f_loss
 

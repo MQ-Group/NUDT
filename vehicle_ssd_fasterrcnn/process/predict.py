@@ -2,6 +2,7 @@ import torch
 from torchvision.models.detection import ssd300_vgg16, fasterrcnn_resnet50_fpn
 from torchvision.utils import draw_bounding_boxes
 from torchvision import transforms
+
 from PIL import Image
 import os
 import glob
@@ -11,13 +12,7 @@ from sse.sse import sse_print
 def predict(args):
     device = args.device
     
-    classes = [
-            '__background__',  # 索引 0 保留给背景
-            'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
-            'bus', 'car', 'cat', 'chair', 'cow',
-            'diningtable', 'dog', 'horse', 'motorbike', 'person',
-            'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-        ]
+    classes = args.classes
     
     if args.model_name == 'ssd':
         model = ssd300_vgg16(
@@ -26,13 +21,12 @@ def predict(args):
             num_classes=len(classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            score_thresh=0.1,
-            nms_thresh=0.45,
-            # detections_per_img=200,
-            detections_per_img=2,
-            iou_thresh=0.5,
-            topk_candidates=400,
-            positive_fraction=0.25,
+            score_thresh=args.score_thresh,
+            nms_thresh=args.nms_thresh,
+            detections_per_img=args.detections_per_img,
+            iou_thresh=args.iou_thresh,
+            topk_candidates=args.topk_candidates,
+            positive_fraction=args.positive_fraction,
         )
     else:
         model = fasterrcnn_resnet50_fpn(
@@ -41,13 +35,13 @@ def predict(args):
             num_classes=len(classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            box_score_thresh=0.05,
-            box_nms_thresh=0.5,
-            box_detections_per_img=100,
-            box_fg_iou_thresh=0.5,
-            box_bg_iou_thresh=0.5,
+            box_score_thresh=args.score_thresh,
+            box_nms_thresh=args.nms_thresh,
+            box_detections_per_img=args.detections_per_img,
+            box_fg_iou_thresh=args.iou_thresh,
+            box_bg_iou_thresh=args.iou_thresh,
             box_batch_size_per_image=512,
-            box_positive_fraction=0.25,
+            box_positive_fraction=args.positive_fraction,
             bbox_reg_weights=None,
         )
     
@@ -74,6 +68,7 @@ def predict(args):
     
     # images_flod = f"{args.data_path}ori_images"
     images_flod = glob.glob(os.path.join(f'{args.data_path}', '*/'))[0]
+    # images_flod = "/data6/user23215430/nudt/vehicle_ssd_fasterrcnn/input/data/PASCAL_VOC2007/VOCdevkit/VOC2007/JPEGImages"
     # print(images_flod)
     
     images_paths = glob.glob(os.path.join(images_flod, '*.jpg'))
@@ -112,14 +107,14 @@ def predict(args):
         # print(predictions[0]['scores'].shape)
         # print(predictions[0]['labels'].shape)
         
-        labels = [classes[i] for i in predictions[0]["labels"]]
+        labels = [classes[predictions[0]["labels"][i]]+f" {score:.2f}" for i, score in enumerate(predictions[0]['scores'])]
         images = draw_bounding_boxes(
-                                images, 
+                                image=images, 
                                 boxes=predictions[0]["boxes"],
                                 labels=labels,
                                 colors="red",
-                                width=2,
-                                font_size=16)
+                                width=1,
+                                font_size=32)
         
         pred_images_path = f"{pred_images_flod}/img_{i}.jpg"
         to_pil = transforms.ToPILImage()

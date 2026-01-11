@@ -19,6 +19,8 @@ def collate_fn(batch):
 def adv(args):
     device = args.device
     
+    classes = args.classes
+    
     test_dataset_raw = VOCDetection(
         root=args.data_path,
         year='2007',
@@ -26,6 +28,7 @@ def adv(args):
         download=False,
         transform=None  # 我们将在适配器中处理变换
     )
+    # print(test_dataset_raw[0])
     test_dataset = VOCDatasetAdapter(test_dataset_raw)
     
     test_loader = DataLoader(
@@ -50,30 +53,30 @@ def adv(args):
         model = ssd300_vgg16(
             weights=None,
             progress=True,
-            num_classes=len(test_dataset.classes),
+            num_classes=len(classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            score_thresh=0.1,
-            nms_thresh=0.45,
-            detections_per_img=200,
-            iou_thresh=0.5,
-            topk_candidates=400,
-            positive_fraction=0.25,
+            score_thresh=args.score_thresh,
+            nms_thresh=args.nms_thresh,
+            detections_per_img=args.detections_per_img,
+            iou_thresh=args.iou_thresh,
+            topk_candidates=args.topk_candidates,
+            positive_fraction=args.positive_fraction,
         )
     else:
         model = fasterrcnn_resnet50_fpn(
             weights=None,
             progress=True,
-            num_classes=len(test_dataset.classes),
+            num_classes=len(classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
-            box_score_thresh=0.05,
-            box_nms_thresh=0.5,
-            box_detections_per_img=100,
-            box_fg_iou_thresh=0.5,
-            box_bg_iou_thresh=0.5,
+            box_score_thresh=args.score_thresh,
+            box_nms_thresh=args.nms_thresh,
+            box_detections_per_img=args.detections_per_img,
+            box_fg_iou_thresh=args.iou_thresh,
+            box_bg_iou_thresh=args.iou_thresh,
             box_batch_size_per_image=512,
-            box_positive_fraction=0.25,
+            box_positive_fraction=args.positive_fraction,
             bbox_reg_weights=None,
         )
 
@@ -82,7 +85,7 @@ def adv(args):
         "status": "success",
         "message": "模型创建完毕.",
         "model_name": args.model_name,
-        "class_name": test_dataset.classes
+        "class_name": classes
     }
     sse_print(event, data)
     

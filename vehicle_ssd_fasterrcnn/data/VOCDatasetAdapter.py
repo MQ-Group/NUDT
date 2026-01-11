@@ -1,6 +1,7 @@
 
 import torch
 from torchvision import transforms
+from torchvision.models._meta import _VOC_CATEGORIES
 
 class VOCDatasetAdapter:
     """
@@ -10,13 +11,7 @@ class VOCDatasetAdapter:
     def __init__(self, dataset):
         self.dataset = dataset
         # VOC 的 20 个类别 + 背景 (0为背景)
-        self.classes = [
-            '__background__',  # 索引 0 保留给背景
-            'aeroplane', 'bicycle', 'bird', 'boat', 'bottle',
-            'bus', 'car', 'cat', 'chair', 'cow',
-            'diningtable', 'dog', 'horse', 'motorbike', 'person',
-            'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-        ]
+        self.classes = _VOC_CATEGORIES
         self.class_to_idx = {cls: idx for idx, cls in enumerate(self.classes)}
 
     def __len__(self):
@@ -62,7 +57,6 @@ class VOCDatasetAdapter:
 
         # 将 PIL 图像转换为 Tensor
         transform = transforms.Compose([
-            transforms.Resize((300, 300)),
             transforms.ToTensor(),
         ])
         img = transform(img)

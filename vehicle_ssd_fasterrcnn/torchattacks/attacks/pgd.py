@@ -73,7 +73,7 @@ class PGD(Attack):
                 cost = -loss(outputs, target_labels)
             else:
                 # cost = loss(outputs, labels)
-                cost = loss_dict['bbox_regression'] + loss_dict['classification']
+                cost = sum(loss for loss in loss_dict.values())
                 
             # Update adversarial images
             grad = torch.autograd.grad(
