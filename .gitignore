@@ -32,9 +32,10 @@ sample_attack_defend/input/
 sample_attack_defend/output/
 base_train_optimaze/input/
 base_train_optimaze/output/
+vehicle_ssd_fasterrcnn/input/
+vehicle_ssd_fasterrcnn/output/
 
 vehicle_ssd/
-vehicle_ssd_fasterrcnn/
 autodrive_llm/
 
 poisioning/input/

@@ -82,7 +82,7 @@ def defend_use_adv(args):
         event = "defend_init"
         data = {
             "status": "success",
-            "message": "防御生成初始化完成.",
+            "message": "防御方法初始化完成.",
             "defend_method": args.defend_method
         }
         sse_print(event, data)
@@ -102,8 +102,8 @@ def defend_use_adv(args):
     total_iamges = len(adv_image_paths)
     ori_pred_conf_sum = 0.0
     adv_pred_conf_sum = 0.0
-    attack_success_count = 0
-    attack_failure_count = 0
+    defend_success_count = 0
+    defend_failure_count = 0
     
     
     ori_images_flod = f"{args.output_path}/def_images"
@@ -187,13 +187,13 @@ def defend_use_adv(args):
         actual_class = int(os.path.splitext(os.path.basename(adv_image_paths[i]))[0].split('_')[-1])
         
         if (actual_class == ori_pred_cls and ori_pred_cls != adv_pred_cls) or (actual_class == adv_pred_cls and ori_pred_cls == adv_pred_cls and ori_pred_conf - adv_pred_conf >= args.confidence_threshold):
-            # attack_result = '成功'
-            attack_result = 'success'
-            attack_success_count += 1
+            # defend_result = '成功'
+            defend_result = 'success'
+            defend_success_count += 1
         else:
-            # attack_result = '失败'
-            attack_result = 'failure'
-            attack_failure_count += 1
+            # defend_result = '失败'
+            defend_result = 'failure'
+            defend_failure_count += 1
         
         ori_pred_conf_sum += ori_pred_conf
         adv_pred_conf_sum += adv_pred_conf
@@ -209,7 +209,7 @@ def defend_use_adv(args):
         data = {
             "message": "正在执行防御...",
             "progress": int(i/total_iamges*100),
-            # "log": f"[{int(i/total_iamges*100)}%] 正在执行攻击... 原始样本: {ori_img_path}, 原始样本预测准确率: {ori_pred_conf*100:.2f}%, 原始样本预测类别: {ori_pred_cls.item()}, 对抗样本: {adv_img_path}, 对抗样本预测准确率: {adv_pred_conf*100:.2f}%, 对抗样本预测类别: {ori_pred_cls.item()}, 原始样本实际类别: {labels[i].item()}, 攻击结果: {attack_result}"
+            # "log": f"[{int(i/total_iamges*100)}%] 正在执行攻击... 原始样本: {ori_img_path}, 原始样本预测准确率: {ori_pred_conf*100:.2f}%, 原始样本预测类别: {ori_pred_cls.item()}, 对抗样本: {adv_img_path}, 对抗样本预测准确率: {adv_pred_conf*100:.2f}%, 对抗样本预测类别: {ori_pred_cls.item()}, 原始样本实际类别: {labels[i].item()}, 攻击结果: {defend_result}"
             "log": f"[{int(i/total_iamges*100)}%] 正在执行防御...",
             "details": {
                 "defend_sample": {
@@ -223,7 +223,7 @@ def defend_use_adv(args):
                     "file_path": adv_img_path
                 },
                 "actual_class": actual_class,
-                "attack_result": attack_result
+                "defend_result": defend_result
             }
         }
         sse_print(event, data)
@@ -239,8 +239,8 @@ def defend_use_adv(args):
             "adversarial_samples": adv_images_flod,
             "summary": {
                 "total_iamges": total_iamges,
-                "task_success_count": attack_success_count,
-                "task_failure_count": attack_failure_count,
+                "task_success_count": defend_success_count,
+                "task_failure_count": defend_failure_count,
                 "defend_samples_pred_confidence": f"{ori_pred_conf_sum/total_iamges*100:.2f}%",
                 "adversarial_samples_pred_confidence": f"{adv_pred_conf_sum/total_iamges*100:.2f}%"
             }
