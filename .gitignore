@@ -34,6 +34,7 @@ base_train_optimaze/input/
 base_train_optimaze/output/
 
 vehicle_ssd/
+vehicle_ssd_fasterrcnn/
 autodrive_llm/
 
 poisioning/input/

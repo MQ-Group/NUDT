@@ -201,7 +201,7 @@ def defend(args):
                         "loss": f"{current_loss:.4f}", 
                         "accuracy": f"{current_acc:.2f}%", 
                         "batch_size": args.batch,
-                        "image_size": inputs.shape[-1]
+                        "image_size": images.shape[-1]
                     }
                 }
                 sse_print(event, data)
