@@ -47,7 +47,7 @@ def adv_train(args):
     }
     sse_print(event, data)
     
-    if args.model == 'ssd':
+    if args.model_name == 'ssd':
         model = ssd300_vgg16(
             weights=None,
             progress=True,
@@ -65,7 +65,7 @@ def adv_train(args):
         model = fasterrcnn_resnet50_fpn(
             weights=None,
             progress=True,
-            num_classes=len(test_dataset.classes),
+            num_classes=len(train_dataset.classes),
             weights_backbone=None,
             trainable_backbone_layers=None,
             box_score_thresh=0.05,
@@ -204,6 +204,7 @@ def adv_train(args):
 
         model_weight_save_path = f"{args.output_path}/adversarial_trained_{args.model_name}.pt"
         torch.save(model.state_dict(), model_weight_save_path)
+        os.system(f"cp {args.model_yaml} {args.output_path}")
         
     event = "final_result"
     data = {

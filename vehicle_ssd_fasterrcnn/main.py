@@ -82,18 +82,18 @@ def add_args(args):
         # print(model_path)
         args.model_path = model_path
     
-    # data_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.yaml'))[0]
-    # # print(data_yaml)
-    # args.data_yaml = data_yaml
-    # data_name = os.path.splitext(os.path.basename(data_yaml))[0]
-    # # print(data_name)
-    # args.data_name = data_name
-    args.data_name = "VOC2007"
-    # if args.process == 'attack' or (args.process == 'defend' and args.defend_method != 'adversarial_training') or args.process == 'predict':
-    #     data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
-    # else:
-    #     data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
-    data_path = f'{args.input_path}/data/'
+    data_yaml = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*.yaml'))[0]
+    # print(data_yaml)
+    args.data_yaml = data_yaml
+    data_name = os.path.splitext(os.path.basename(data_yaml))[0]
+    # print(data_name)
+    args.data_name = data_name
+    if args.process == 'attack' or (args.process == 'defend' and args.defend_method != 'adversarial_training') or args.process == 'predict':
+        data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
+    else:
+        # data_path = glob.glob(os.path.join(os.path.join(f'{args.input_path}/data', '*/'), '*/'))[0]
+        data_path = glob.glob(os.path.join(f'{args.input_path}/data', '*/'))[0]
+    # print(data_path)
     args.data_path = data_path
     
     return args
@@ -132,7 +132,7 @@ def main(args):
         from process.sample import sample
         sampled_data_path = f'{args.output_path}/sampled_' + args.data_name
         sample(src_dir=args.data_path, dst_dir=sampled_data_path, train_sample_num=args.selected_samples, val_sample_num=args.selected_samples)
-        
+        os.system(f"cp {args.data_yaml} {args.output_path}")
         from sse.sse import sse_print
         event = "final_result"
         data = {

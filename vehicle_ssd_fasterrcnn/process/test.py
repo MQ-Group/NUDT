@@ -44,7 +44,7 @@ def test(args):
     }
     sse_print(event, data)
 
-    if args.model == 'ssd':
+    if args.model_name == 'ssd':
         model = ssd300_vgg16(
             weights=None,
             progress=True,

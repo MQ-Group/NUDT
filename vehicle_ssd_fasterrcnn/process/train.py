@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 
 from data.VOCDatasetAdapter import VOCDatasetAdapter
 
+import os
 from sse.sse import sse_print
 
 def collate_fn(batch):
@@ -45,7 +46,7 @@ def train(args):
     }
     sse_print(event, data)
     
-    if args.model == 'ssd':
+    if args.model_name == 'ssd':
         model = ssd300_vgg16(
             weights=None,
             progress=True,
@@ -153,6 +154,7 @@ def train(args):
 
         model_weight_save_path = f"{args.output_path}/trained_{args.model_name}.pt"
         torch.save(model.state_dict(), model_weight_save_path)
+        os.system(f"cp {args.model_yaml} {args.output_path}")
         
     event = "final_result"
     data = {

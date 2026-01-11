@@ -21,7 +21,7 @@ def attack_use_adv(args):
             'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
         ]
     
-    if args.model == 'ssd':
+    if args.model_name == 'ssd':
         model = ssd300_vgg16(
             weights=None,
             progress=True,
