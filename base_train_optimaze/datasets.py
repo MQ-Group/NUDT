@@ -6,11 +6,18 @@ import os
 
 def get_dataset(data_name, data_path, is_train):
     if data_name == 'mnist':
+        # transform = transforms.Compose([
+        #     transforms.ToTensor(),
+        #     transforms.Normalize(mean=(0.1307,), std=(0.3081,))
+        #     ])
+        # dataset = datasets.MNIST(data_path, train=is_train, download=False, transform=transform)
         transform = transforms.Compose([
+            transforms.Grayscale(),
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.1307,), std=(0.3081,))
             ])
-        dataset = datasets.MNIST(data_path, train=is_train, download=False, transform=transform)
+        root = os.path.join(data_path, 'train' if is_train else 'val')
+        dataset = datasets.ImageFolder(root, transform=transform)
         num_classes = 10
     elif data_name == 'cifar10':
         transform = transforms.Compose([
@@ -18,7 +25,9 @@ def get_dataset(data_name, data_path, is_train):
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.4914, 0.4822, 0.4465), std=(0.2470, 0.2435, 0.2616))
             ])
-        dataset = datasets.CIFAR10(data_path, train=is_train, download=False, transform=transform)
+        # dataset = datasets.CIFAR10(data_path, train=is_train, download=False, transform=transform)
+        root = os.path.join(data_path, 'train' if is_train else 'val')
+        dataset = datasets.ImageFolder(root, transform=transform)
         num_classes = 10
     elif data_name == 'cifar100':
         transform = transforms.Compose([
@@ -26,7 +35,9 @@ def get_dataset(data_name, data_path, is_train):
             transforms.ToTensor(),
             transforms.Normalize(mean=(0.5071, 0.4867, 0.4408), std=(0.2675, 0.2565, 0.2761))
             ])
-        dataset = datasets.CIFAR100(data_path, train=is_train, transform=transform)
+        # dataset = datasets.CIFAR100(data_path, train=is_train, transform=transform)
+        root = os.path.join(data_path, 'train' if is_train else 'val')
+        dataset = datasets.ImageFolder(root, transform=transform)
         num_classes = 100
     elif data_name == 'imagenet':
         transform = transforms.Compose([

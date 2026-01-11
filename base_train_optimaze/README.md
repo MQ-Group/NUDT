@@ -1,7 +1,7 @@
 # 基础模型训练与优化
 
 ## 概述
-本项目支持vgg, resnet, inception, lenet模型的训练与优化，数据集包括cifar10, cifar100, imagenet, mnist(仅lenet模型)。
+本项目基于 [torchvision](https://docs.pytorch.org/vision/stable/index.html) 库支持vgg, resnet, inception, lenet模型的训练与优化，数据集包括cifar10, cifar100, imagenet, mnist(仅lenet模型)。
 
 
 ## 环境变量：
@@ -152,3 +152,7 @@ docker run --rm \
     base_train_optimaze:latest
 ```
 
+## 资料
+- [模型](https://docs.pytorch.org/vision/stable/models.html):`https://docs.pytorch.org/vision/stable/models.html`
+- [文档](https://docs.pytorch.org/vision/stable/index.html):`https://docs.pytorch.org/vision/stable/index.html`
+- [github仓库](https://github.com/pytorch/vision):`https://github.com/pytorch/vision`

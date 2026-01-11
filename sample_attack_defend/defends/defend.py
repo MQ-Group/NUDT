@@ -31,11 +31,12 @@ def defend(args):
     try:
         # print(args.data_name)
         if args.data_name == 'cifar10':
-            dataset = datasets.CIFAR10(
-                                root=args.data_path,
-                                train=True,
-                                transform=transforms.Compose([transforms.ToTensor()]),
-                                download=False)
+            # dataset = datasets.CIFAR10(
+            #                     root=args.data_path,
+            #                     train=True,
+            #                     transform=transforms.Compose([transforms.ToTensor()]),
+            #                     download=False)
+            dataset = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transforms.Compose([transforms.ToTensor()]))
             train_loader = torch.utils.data.DataLoader(
                                 dataset,
                                 batch_size=args.batch,
@@ -43,11 +44,12 @@ def defend(args):
                                 num_workers=args.workers)
             benchmark_dataset = BenchmarkDataset.cifar_10
         elif args.data_name == 'cifar100':
-            dataset = datasets.CIFAR10(
-                                root=args.data_path,
-                                train=True,
-                                transform=transforms.Compose([transforms.ToTensor()]),
-                                download=False)
+            # dataset = datasets.CIFAR10(
+            #                     root=args.data_path,
+            #                     train=True,
+            #                     transform=transforms.Compose([transforms.ToTensor()]),
+            #                     download=False)
+            dataset = datasets.ImageFolder(os.path.join(args.data_path, 'train'), transform=transforms.Compose([transforms.ToTensor()]))
             train_loader = torch.utils.data.DataLoader(
                                 dataset,
                                 batch_size=args.batch,

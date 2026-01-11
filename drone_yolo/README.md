@@ -1,7 +1,7 @@
 # 无人机识别场景
 
 ## 概述
-本项目基于 ultralytics 库实现无人机识别场景下基于drone_yolo的无人机识别任务。它支持对抗样本生成、攻击评估、防御机制和模型训练。
+本项目基于 [ultralytics]((https://docs.ultralytics.com/zh/)) 库实现无人机识别场景下基于drone_yolo的无人机识别任务。它支持对抗样本生成、攻击评估、防御机制和模型训练。
 
 
 ## 环境变量：
@@ -122,6 +122,12 @@ docker run --rm \
     drone_yolo:latest
 ```
 
+
+
+## 资料
+- [ultralytics文档](https://docs.ultralytics.com/zh/):`https://docs.ultralytics.com/zh/`
+- [github仓库](https://github.com/ultralytics/ultralytics):`https://github.com/ultralytics/ultralytics`
+
 ## 基于YOLOv8改进1-Drone-YOLO复现
 ### 博客
 https://blog.csdn.net/weixin_45679938/article/details/139077352
@@ -130,6 +136,6 @@ https://blog.csdn.net/weixin_45679938/article/details/139077352
 https://www.mdpi.com/2504-446X/7/8/526
 
 ### 主要改进
-1.加P2层（主要提升）；\
-2.主干网络下采样更换成RepVGG结构；\
-3.颈部自底向上concat多融合一个上层特征（几乎无提升）
+1. 加P2层（主要提升）；\
+2. 主干网络下采样更换成RepVGG结构；\
+3. 颈部自底向上concat多融合一个上层特征（几乎无提升）

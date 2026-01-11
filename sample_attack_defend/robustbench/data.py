@@ -92,11 +92,12 @@ def load_cifar10(
     data_dir: str = './data',
     transforms_test: Callable = PREPROCESSINGS[None]
 ) -> Tuple[torch.Tensor, torch.Tensor]:
-    dataset = datasets.CIFAR10(root=data_dir,
-                               train=False,
-                               transform=transforms_test,
-                            #    download=True)
-                               download=False)
+    # dataset = datasets.CIFAR10(root=data_dir,
+    #                            train=False,
+    #                            transform=transforms_test,
+    #                         #    download=True)
+    #                            download=False)
+    dataset = datasets.ImageFolder(os.path.join(data_dir, 'val'), transform=transforms_test)
     return _load_dataset(dataset, n_examples, batch_size, num_workers)
 
 

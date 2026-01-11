@@ -1,7 +1,7 @@
 # 车辆识别场景
 
 ## 概述
-本项目基于 ultralytics 库实现车辆识别场景下yolov5, yolov8, yolov10的车辆识别任务。它支持对抗样本生成、攻击评估、防御机制和模型训练。
+本项目基于 [ultralytics](https://docs.ultralytics.com/zh/) 库实现车辆识别场景下yolov5, yolov8, yolov10的车辆识别任务。它支持对抗样本生成、攻击评估、防御机制和模型训练。
 
 ## 环境变量：
 * `input_path`（str 必填）: 指定输入路径，在此路径下有权重文件和数据集文件。
@@ -119,3 +119,7 @@ docker run --rm \
     -e filter_kernel_size=3 \
     vehicle_yolo:latest
 ```
+
+## 资料
+- [ultralytics文档](https://docs.ultralytics.com/zh/):`https://docs.ultralytics.com/zh/`
+- [github仓库](https://github.com/ultralytics/ultralytics):`https://github.com/ultralytics/ultralytics`

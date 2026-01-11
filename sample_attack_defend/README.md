@@ -1,7 +1,7 @@
 # 样本攻防
 
 ## 概述
-本项目基于 adversarial-attacks-pytorch 库实现样本攻击和防御场景。它支持对抗样本生成、攻击评估、防御训练、对抗样本检测。
+本项目基于 [adversarial-attacks-pytorch](https://adversarial-attacks-pytorch.readthedocs.io/en/latest/index.html) 库实现样本攻击和防御场景。它支持对抗样本生成、攻击评估、防御训练、对抗样本检测。
 
 
 ## 环境变量：
@@ -134,3 +134,7 @@ docker run --rm \
     drone_yolo:latest
 ```
 
+## 资料
+- [文档](https://adversarial-attacks-pytorch.readthedocs.io/en/latest/index.html):`https://adversarial-attacks-pytorch.readthedocs.io/en/latest/index.html`
+
+- [github仓库](https://github.com/Harry24k/adversarial-attacks-pytorch):`https://github.com/Harry24k/adversarial-attacks-pytorch`
