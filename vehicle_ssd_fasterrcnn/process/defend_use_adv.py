@@ -75,6 +75,8 @@ def defend_use_adv(args):
     
     # ori_images_paths = glob.glob(os.path.join(ori_images_flod, '*.jpg'))
     adv_images_paths = glob.glob(os.path.join(adv_images_flod, '*.jpg'))
+    # ori_images_paths.sort()
+    adv_images_paths.sort()
     # print(len(ori_images_paths))
     # print(len(adv_images_paths))
     
@@ -207,19 +209,21 @@ def defend_use_adv(args):
         ori_img_path = f"{ori_images_flod}/def_img_{i}_obj_{actual_object_number}_pred_obj_{ori_pred_cls.nelement()}.jpg"
         adv_img_path = f"{adv_images_flod}/adv_img_{i}_obj_{actual_object_number}_pred_obj_{adv_pred_cls.nelement()}.jpg"
         
-        ori_labels = [classes[ori_predictions[0]["labels"][i]]+f" {score:.2f}" for i, score in enumerate(ori_predictions[0]['scores'])]
-        adv_labels = [classes[adv_predictions[0]["labels"][i]]+f" {score:.2f}" for i, score in enumerate(adv_predictions[0]['scores'])]
+        ori_pred_labels = [classes[ori_pred_cls[i]] for i in range(ori_pred_cls.nelement())]
+        adv_pred_labels = [classes[adv_pred_cls[i]] for i in range(adv_pred_cls.nelement())]
+        ori_pred_labels_scores = [label+f" {ori_pred_conf[i]:.2f}" for i, label in enumerate(ori_pred_labels)]
+        adv_pred_labels_scores = [label+f" {adv_pred_conf[i]:.2f}" for i, label in enumerate(adv_pred_labels)]
         ori_images = draw_bounding_boxes(
                                 image=ori_images, 
                                 boxes=ori_predictions[0]["boxes"],
-                                labels=ori_labels,
+                                labels=ori_pred_labels_scores,
                                 colors="red",
                                 width=1,
                                 font_size=32)
         adv_images = draw_bounding_boxes(
                                 image=adv_images, 
                                 boxes=adv_predictions[0]["boxes"],
-                                labels=adv_labels,
+                                labels=adv_pred_labels_scores,
                                 colors="red",
                                 width=1,
                                 font_size=32)
@@ -243,7 +247,7 @@ def defend_use_adv(args):
                     # "confidence": f"{ori_pred_conf*100:.2f}%",
                     # "predict_class": ori_pred_cls,
                     "object_number": ori_pred_cls.nelement(),
-                    "predict_class": ori_labels,
+                    "predict_class": ori_pred_labels,
                     "confidence": ori_pred_conf.tolist(),
                     "file_path": ori_img_path
                 },
@@ -251,7 +255,7 @@ def defend_use_adv(args):
                     # "confidence": f"{adv_pred_conf*100:.2f}%",
                     # "predict_class": adv_pred_cls,
                     "object_number": adv_pred_cls.nelement(),
-                    "predict_class": adv_labels,
+                    "predict_class": adv_pred_labels,
                     "confidence": adv_pred_conf.tolist(),
                     "file_path": adv_img_path
                 },

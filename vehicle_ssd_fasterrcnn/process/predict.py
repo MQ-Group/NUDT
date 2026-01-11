@@ -72,6 +72,7 @@ def predict(args):
     # print(images_flod)
     
     images_paths = glob.glob(os.path.join(images_flod, '*.jpg'))
+    images_paths.sort()
     # print(len(image_paths))
     
     event = "data_load"
@@ -107,11 +108,12 @@ def predict(args):
         # print(predictions[0]['scores'].shape)
         # print(predictions[0]['labels'].shape)
         
-        labels = [classes[predictions[0]["labels"][i]]+f" {score:.2f}" for i, score in enumerate(predictions[0]['scores'])]
+        pred_labels = [classes[predictions[0]['labels'][i]] for i in range(predictions[0]['labels'].nelement())]
+        pred_labels_scores = [label+f" {predictions[0]['scores'][i]:.2f}" for i, label in enumerate(pred_labels)]
         images = draw_bounding_boxes(
                                 image=images, 
                                 boxes=predictions[0]["boxes"],
-                                labels=labels,
+                                labels=pred_labels_scores,
                                 colors="red",
                                 width=1,
                                 font_size=32)
@@ -131,8 +133,8 @@ def predict(args):
             "details": {
                 # "confidence": f"{ori_pred_conf*100:.2f}%",
                 # "predict_class": ori_pred_cls,
-                "object_number": len(labels),
-                "predict_class": labels,
+                "object_number": len(pred_labels),
+                "predict_class": pred_labels,
                 "confidence": predictions[0]['scores'].tolist(),
                 "file_path": pred_images_path
             }

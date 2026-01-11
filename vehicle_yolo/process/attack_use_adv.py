@@ -36,6 +36,8 @@ def attack_use_adv(args):
     
     ori_image_paths = glob.glob(os.path.join(ori_images_flod, '*.jpg'))
     adv_image_paths = glob.glob(os.path.join(adv_images_flod, '*.jpg'))
+    ori_image_paths.sort()
+    adv_image_paths.sort()
     # print(len(ori_image_paths))
     # print(len(adv_image_paths))
     

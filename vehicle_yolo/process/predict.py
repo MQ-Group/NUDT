@@ -34,6 +34,7 @@ def predict(args):
     # print(ori_images_flod)
     
     ori_image_paths = glob.glob(os.path.join(ori_images_flod, '*.jpg'))
+    ori_image_paths.sort()
     # print(len(ori_image_paths))
     
     event = "data_load"
