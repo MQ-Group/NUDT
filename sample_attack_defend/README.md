@@ -23,7 +23,7 @@
 * `epsilon`（float 选填，默认为`8/255`）：扰动强度参数，控制对抗扰动大小。
 * `step_size`（float 选填，默认为`2/255`）：步长，迭代攻击的更新幅度。
 * `max_iterations`（int 选填，默认为`50`）：最大迭代次数。
-* `delay`（float 选填，默认为`1.0`）：延时，取值在（0，1）之间，其值越小，迭代轮数靠前算出来的梯度对当前的梯度方向影响越小。
+* `decay`（float 选填，默认为`1.0`）：延时，取值在（0，1）之间，其值越小，迭代轮数靠前算出来的梯度对当前的梯度方向影响越小。
 * `sampled_examples`（int 选填，默认为`5`）：邻近抽取的样例数。
 * `random_start`（bool 选填，默认为`False`）：是否随机初始化扰动，支持枚举值（第一个为默认值）:`False`, `True`。
 * ~~`loss_function`（str 选填，默认为`cross_entropy`）：损失函数类型，支持枚举值（第一个为默认值）:`cross_entropy`, `mse`, `l1`, `binary_cross_entropy`。~~

@@ -50,9 +50,10 @@ class CW(Attack):
         Overridden.
         """
         images = torch.stack(images, dim=0)
+        labels = torch.stack([targets[i]['labels'] for i in range(len(targets))], dim=0)
         
         images = images.clone().detach().to(self.device)
-        # labels = labels.clone().detach().to(self.device)
+        labels = labels.clone().detach().to(self.device)
         
         if self.targeted:
             target_labels = self.get_target_label(images, labels)
@@ -84,7 +85,7 @@ class CW(Attack):
             self.model.train() # train才会求loss
             loss_dict = self.model(adv_images_list, targets)
             
-            
+        
             if self.targeted:
                 f_loss = self.f(outputs, target_labels).sum()
             else:
@@ -99,13 +100,18 @@ class CW(Attack):
             optimizer.step()
 
             # Update adversarial images
-            pre = torch.argmax(outputs.detach(), 1)
+            # pre = torch.argmax(outputs.detach(), 1)
+            self.model.eval() # eval才会求scores
+            predictions = self.model(images=adv_images_list, targets=None)
+            pre = torch.stack([predictions[i]['labels'] for i in range(len(predictions))], dim=0)
+            self.model.train() # 还原
             if self.targeted:
                 # We want to let pre == target_labels in a targeted attack
                 condition = (pre == target_labels).float()
             else:
                 # If the attack is not targeted we simply make these two values unequal
-                condition = (pre != labels).float()
+                # condition = (pre != labels).float()
+                condition = float(pre.shape != labels.shape) or (pre != labels).float()
 
             # Filter out images that get either correct predictions or non-decreasing loss,
             # i.e., only images that are both misclassified and loss-decreasing are left

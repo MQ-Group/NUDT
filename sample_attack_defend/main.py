@@ -42,7 +42,7 @@ def parse_args():
     parser.add_argument('--step_size', type=float, default=2/255, help='step size for attack method and defend medthod')
     parser.add_argument('--max_iterations', type=int, default=50, help='max iterations for attack method and defend medthod')
     
-    parser.add_argument('--delay', type=float, default=1.0, help='momentum factor of mifgsm for attack method')
+    parser.add_argument('--decay', type=float, default=1.0, help='momentum factor of mifgsm for attack method')
     parser.add_argument('--sampled_examples', type=int, default=5, help='the number of sampled examples in the neighborhood of vmifgsm for attack method')
     
     parser.add_argument('--random_start', type=bool, default=True, help='initial random start for attack method')
