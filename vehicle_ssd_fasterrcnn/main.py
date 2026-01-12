@@ -34,11 +34,11 @@ def parse_args():
     parser.add_argument('--workers', type=int, default=16, help='dataloader workers (per RANK if DDP)')
     
     parser.add_argument('--classes', type=list, default=_COCO_CATEGORIES, choices=[_COCO_CATEGORIES, _VOC_CATEGORIES], help='dataset classes list')
-    parser.add_argument('--score_thresh', type=float, default=0.01, help='score threshold used for postprocessing the detections')
-    parser.add_argument('--nms_thresh', type=float, default=0.45, help='NMS threshold used for postprocessing the detections')
-    parser.add_argument('--iou_thresh', type=float, default=0.6, help='minimum IoU between the anchor and the GT box so that they can be considered as positive during training')
-    parser.add_argument('--detections_per_img', type=int, default=100, help='number of best detections to keep after NMS')
-    parser.add_argument('--topk_candidates', type=int, default=20, help='number of best detections to keep before NMS')
+    parser.add_argument('--score_thresh', type=float, default=0.3, help='score threshold used for postprocessing the detections')
+    parser.add_argument('--nms_thresh', type=float, default=0.1, help='NMS threshold used for postprocessing the detections')
+    parser.add_argument('--iou_thresh', type=float, default=0.7, help='minimum IoU between the anchor and the GT box so that they can be considered as positive during training')
+    parser.add_argument('--detections_per_img', type=int, default=5, help='number of best detections to keep after NMS')
+    parser.add_argument('--topk_candidates', type=int, default=10, help='number of best detections to keep before NMS')
     parser.add_argument('--positive_fraction', type=float, default=0.5, help='a number between 0 and 1 which indicates the proportion of positive proposals used during the training of the classification head. It is used to estimate the negative to positive ratio')
     
     parser.add_argument('--epsilon', type=float, default=15/255, help='epsilon for attack method and defend medthod')
