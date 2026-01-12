@@ -105,7 +105,7 @@ def add_cfg(args, cfg): # 为了对抗训练
     cfg.epsilon = args.epsilon
     cfg.step_size = args.step_size
     cfg.max_iterations = args.max_iterations
-    cfg.delay = args.delay
+    cfg.decay = args.decay
     cfg.sampled_examples = args.sampled_examples
     cfg.random_start = args.random_start
     cfg.lr = args.lr

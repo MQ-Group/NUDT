@@ -127,6 +127,7 @@ def train(args):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            scheduler.step()
             
             total_loss += loss.item()
             
@@ -150,8 +151,6 @@ def train(args):
                 }
                 sse_print(event, data)
 
-        # 更新学习率
-        scheduler.step()
 
         model_weight_save_path = f"{args.output_path}/trained_{args.model_name}.pth"
         torch.save(model.state_dict(), model_weight_save_path)
