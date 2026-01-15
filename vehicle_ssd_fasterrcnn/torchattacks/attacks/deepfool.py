@@ -43,9 +43,10 @@ class DeepFool(Attack):
         Overridden.
         """
         images = torch.stack(images, dim=0)
+        labels = torch.stack([targets[i]['labels'] for i in range(len(targets))], dim=0)
         
         images = images.clone().detach().to(self.device)
-        # labels = labels.clone().detach().to(self.device)
+        labels = labels.clone().detach().to(self.device)
 
         batch_size = len(images)
         correct = torch.tensor([True] * batch_size)
@@ -65,7 +66,7 @@ class DeepFool(Attack):
                     adv_images[idx], labels[idx]
                 )
                 adv_images[idx] = adv_image
-                target_labels[idx] = pre
+                # target_labels[idx] = pre # 结果不需要labels
                 if early_stop:
                     correct[idx] = False
             curr_steps += 1
@@ -76,10 +77,17 @@ class DeepFool(Attack):
     def _forward_indiv(self, image, label):
         image.requires_grad = True
         # fs = self.get_logits(image)[0]
-        fs, bbox_preds = self.model(images)
+        image_list = [image[i] for i in range(image.shape[0])]
+        self.model.eval() # eval才会求scores
+        predictions = self.model(images=image_list, targets=None)
+        fs = torch.stack([predictions[i]['scores'] for i in range(len(predictions))], dim=0)
+        pre = torch.stack([predictions[i]['labels'] for i in range(len(predictions))], dim=0)
         
-        _, pre = torch.max(fs, dim=0)
-        if pre != label:
+        # print(pre)
+        # print(label)
+        # _, pre = torch.max(fs, dim=0)
+        # if pre != label:
+        if not torch.equal(pre, label):
             return (True, pre, image)
 
         ws = self._construct_jacobian(fs, image)

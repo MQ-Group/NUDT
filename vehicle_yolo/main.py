@@ -238,7 +238,7 @@ def main(args):
         from process.predict import predict
         predict(args)
     elif args.process == 'sample': 
-        from sample.sample import sample_dataset
+        from process.sample import sample_dataset
         sampled_data_path = f'{args.output_path}/sampled_' + args.data_name
         sample_dataset(source_dir=args.data_path, target_dir=sampled_data_path, train_count=args.selected_samples, val_count=args.selected_samples, seed=None)
         os.system(f"cp {args.data_yaml} {args.output_path}")

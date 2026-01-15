@@ -50,21 +50,29 @@ class Jitter(Attack):
         self.std = std
         self.supported_mode = ["default", "targeted"]
 
-    def forward(self, images, labels):
+    # def forward(self, images, labels):
+    def forward(self, batch):
         r"""
         Overridden.
         """
 
-        images = images.clone().detach().to(self.device)
-        labels = labels.clone().detach().to(self.device)
+        # images = images.clone().detach().to(self.device)
+        # labels = labels.clone().detach().to(self.device)
+        batch['img'] = batch['img'].clone().detach().to(self.device)
+        batch['cls'] = batch['cls'].clone().detach().to(self.device)
+        batch['bboxes'] = batch['bboxes'].clone().detach().to(self.device)
 
         if self.targeted:
             target_labels = self.get_target_label(images, labels)
 
-        loss = nn.MSELoss(reduction="none")
+        # loss = nn.MSELoss(reduction="none")
 
-        adv_images = images.clone().detach()
+        # adv_images = images.clone().detach()
+        adv_images = batch['img'].clone().detach()
 
+        images = batch['img']
+        batch['img'] = adv_images
+        
         if self.random_start:
             # Starting at a uniformly random point
             adv_images = adv_images + torch.empty_like(adv_images).uniform_(
@@ -73,45 +81,57 @@ class Jitter(Attack):
             adv_images = torch.clamp(adv_images, min=0, max=1).detach()
 
         for _ in range(self.steps):
-            adv_images.requires_grad = True
-            logits = self.get_logits(adv_images)
+            # adv_images.requires_grad = True
+            # logits = self.get_logits(adv_images)
+            batch['img'].requires_grad = True
+            loss, loss_items = self.model(batch)
 
-            _, pre = torch.max(logits, dim=1)
-            wrong = pre != labels
+            # _, pre = torch.max(logits, dim=1)
+            # wrong = pre != labels
 
-            norm_z = torch.norm(logits, p=float("inf"), dim=1, keepdim=True)
-            hat_z = nn.Softmax(dim=1)(self.scale * logits / norm_z)
+            # norm_z = torch.norm(logits, p=float("inf"), dim=1, keepdim=True)
+            # hat_z = nn.Softmax(dim=1)(self.scale * logits / norm_z)
 
-            if self.std != 0:
-                hat_z = hat_z + self.std * torch.randn_like(hat_z)
+            # if self.std != 0:
+            #     hat_z = hat_z + self.std * torch.randn_like(hat_z)
 
-            # Calculate loss
-            if self.targeted:
-                target_Y = F.one_hot(
-                    target_labels, num_classes=logits.shape[-1]
-                ).float()
-                cost = -loss(hat_z, target_Y).mean(dim=1)
-            else:
-                Y = F.one_hot(labels, num_classes=logits.shape[-1]).float()
-                cost = loss(hat_z, Y).mean(dim=1)
+            # # Calculate loss
+            # if self.targeted:
+            #     target_Y = F.one_hot(
+            #         target_labels, num_classes=logits.shape[-1]
+            #     ).float()
+            #     cost = -loss(hat_z, target_Y).mean(dim=1)
+            # else:
+            #     Y = F.one_hot(labels, num_classes=logits.shape[-1]).float()
+            #     cost = loss(hat_z, Y).mean(dim=1)
 
-            norm_r = torch.norm(
-                (adv_images - images), p=float("inf"), dim=[1, 2, 3]
-            )  # nopep8
-            nonzero_r = norm_r != 0
-            cost[wrong * nonzero_r] /= norm_r[wrong * nonzero_r]
+            # norm_r = torch.norm(
+            #     (adv_images - images), p=float("inf"), dim=[1, 2, 3]
+            # )  # nopep8
+            # nonzero_r = norm_r != 0
+            # cost[wrong * nonzero_r] /= norm_r[wrong * nonzero_r]
 
-            cost = cost.mean()
+            # cost = cost.mean()
+            cost = loss.sum()
 
             # Update adversarial images
+            # grad = torch.autograd.grad(
+            #     cost, adv_images, retain_graph=False, create_graph=False
+            # )[0]
             grad = torch.autograd.grad(
-                cost, adv_images, retain_graph=False, create_graph=False
+                cost, batch['img'], retain_graph=False, create_graph=False
             )[0]
 
-            adv_images = adv_images.detach() + self.alpha * grad.sign()
+            # adv_images = adv_images.detach() + self.alpha * grad.sign()
+            # delta = torch.clamp(
+            #     adv_images - images, min=-self.eps, max=self.eps
+            # )  # nopep8
+            # adv_images = torch.clamp(images + delta, min=0, max=1).detach()
+            batch['img'] = batch['img'].detach() + self.alpha * grad.sign()
             delta = torch.clamp(
-                adv_images - images, min=-self.eps, max=self.eps
+                batch['img'] - images, min=-self.eps, max=self.eps
             )  # nopep8
-            adv_images = torch.clamp(images + delta, min=0, max=1).detach()
+            batch['img'] = torch.clamp(images + delta, min=0, max=1).detach()
 
-        return adv_images
+        # return adv_images
+        return batch['img']

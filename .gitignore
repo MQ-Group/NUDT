@@ -34,8 +34,6 @@ base_train_optimaze/input/
 base_train_optimaze/output/
 vehicle_ssd_fasterrcnn/input/
 vehicle_ssd_fasterrcnn/output/
-vehicle_ssd_fasterrcnn/
-vehicle_ssd_fasterrcnn/
 
 vehicle_ssd/
 autodrive_llm/

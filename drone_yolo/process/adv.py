@@ -64,8 +64,7 @@ def adv(args):
         elif args.attack_method == 'gn':
             atk = GN(yolo.model, std=args.std)
         elif args.attack_method == 'jitter':
-            # atk = Jitter(yolo.model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
-            atk = PGD(yolo.model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
+            atk = Jitter(yolo.model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
         else:
             raise ValueError('不支持的攻击方法.')
 

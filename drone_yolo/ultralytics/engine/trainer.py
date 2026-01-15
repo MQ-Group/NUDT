@@ -378,8 +378,7 @@ class BaseTrainer:
                 elif self.args.attack_method == 'gn':
                     self.atk = GN(self.model, std=self.args.std)
                 elif self.args.attack_method == 'jitter':
-                    # atk = Jitter(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, scale=self.args.scale, std=self.args.std, random_start=self.args.random_start)
-                    self.atk = PGD(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, random_start=self.args.random_start)
+                    atk = Jitter(self.model, eps=self.args.epsilon, alpha=self.args.step_size, steps=self.args.max_iterations, scale=self.args.scale, std=self.args.std, random_start=self.args.random_start)
                 else:
                     raise ValueError('不支持的攻击方法.')
 

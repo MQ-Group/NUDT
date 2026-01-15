@@ -56,9 +56,10 @@ class Jitter(Attack):
         Overridden.
         """
         images = torch.stack(images, dim=0)
+        labels = torch.stack([targets[i]['labels'] for i in range(len(targets))], dim=0)
         
         images = images.clone().detach().to(self.device)
-        # labels = labels.clone().detach().to(self.device)
+        labels = labels.clone().detach().to(self.device)
 
         if self.targeted:
             target_labels = self.get_target_label(images, labels)
@@ -77,33 +78,37 @@ class Jitter(Attack):
         for _ in range(self.steps):
             adv_images.requires_grad = True
             # logits = self.get_logits(adv_images)
+            adv_images_list = [adv_images[i] for i in range(adv_images.shape[0])]
+            self.model.train() # train才会求loss
+            loss_dict = self.model(adv_images_list, targets)
+            
+            # _, pre = torch.max(logits, dim=1)
+            # wrong = pre != labels
 
-            _, pre = torch.max(logits, dim=1)
-            wrong = pre != labels
+            # norm_z = torch.norm(logits, p=float("inf"), dim=1, keepdim=True)
+            # hat_z = nn.Softmax(dim=1)(self.scale * logits / norm_z)
 
-            norm_z = torch.norm(logits, p=float("inf"), dim=1, keepdim=True)
-            hat_z = nn.Softmax(dim=1)(self.scale * logits / norm_z)
+            # if self.std != 0:
+            #     hat_z = hat_z + self.std * torch.randn_like(hat_z)
 
-            if self.std != 0:
-                hat_z = hat_z + self.std * torch.randn_like(hat_z)
+            # # Calculate loss
+            # if self.targeted:
+            #     target_Y = F.one_hot(
+            #         target_labels, num_classes=logits.shape[-1]
+            #     ).float()
+            #     cost = -loss(hat_z, target_Y).mean(dim=1)
+            # else:
+            #     Y = F.one_hot(labels, num_classes=logits.shape[-1]).float()
+            #     cost = loss(hat_z, Y).mean(dim=1)
 
-            # Calculate loss
-            if self.targeted:
-                target_Y = F.one_hot(
-                    target_labels, num_classes=logits.shape[-1]
-                ).float()
-                cost = -loss(hat_z, target_Y).mean(dim=1)
-            else:
-                Y = F.one_hot(labels, num_classes=logits.shape[-1]).float()
-                cost = loss(hat_z, Y).mean(dim=1)
+            # norm_r = torch.norm(
+            #     (adv_images - images), p=float("inf"), dim=[1, 2, 3]
+            # )  # nopep8
+            # nonzero_r = norm_r != 0
+            # cost[wrong * nonzero_r] /= norm_r[wrong * nonzero_r]
 
-            norm_r = torch.norm(
-                (adv_images - images), p=float("inf"), dim=[1, 2, 3]
-            )  # nopep8
-            nonzero_r = norm_r != 0
-            cost[wrong * nonzero_r] /= norm_r[wrong * nonzero_r]
-
-            cost = cost.mean()
+            # cost = cost.mean()
+            cost = sum(loss for loss in loss_dict.values())
 
             # Update adversarial images
             grad = torch.autograd.grad(

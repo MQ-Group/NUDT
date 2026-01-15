@@ -115,13 +115,11 @@ def adv_train(args):
         elif args.attack_method == 'cw':
             atk = CW(model, c=1, kappa=0, steps=args.max_iterations, lr=args.lr)
         elif args.attack_method == 'deepfool':
-            # atk = DeepFool(model, steps=args.max_iterations, overshoot=0.02)
-            atk = CW(model, c=1, kappa=0, steps=args.max_iterations, lr=args.lr)
+            atk = DeepFool(model, steps=args.max_iterations, overshoot=0.02)
         elif args.attack_method == 'gn':
             atk = GN(model, std=args.std)
         elif args.attack_method == 'jitter':
-            # atk = Jitter(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
-            atk = PGD(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, random_start=args.random_start)
+            atk = Jitter(model, eps=args.epsilon, alpha=args.step_size, steps=args.max_iterations, scale=args.scale, std=args.std, random_start=args.random_start)
         else:
             raise ValueError('不支持的攻击方法.')
 
