@@ -134,7 +134,8 @@ class BaseTrainer:
         # Dirs
         self.save_dir = get_save_dir(self.args)
         self.args.name = self.save_dir.name  # update name for loggers
-        self.wdir = self.save_dir / "weights"  # weights dir
+        # self.wdir = self.save_dir / "weights"  # weights dir
+        self.wdir = self.save_dir  # weights dir
         if RANK in {-1, 0}:
             self.wdir.mkdir(parents=True, exist_ok=True)  # make dir
             self.args.save_dir = str(self.save_dir)

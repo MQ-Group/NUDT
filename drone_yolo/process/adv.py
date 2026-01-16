@@ -131,6 +131,8 @@ def adv(args):
             break
 
     os.system(f"cp {args.data_yaml} {args.output_path}")
+    os.system(f"rm -rf {args.output_path}/args.yaml")
+    os.system(f"rm -rf {args.output_path}/labels.jpg")
     
     event = "final_result"
     data = {
