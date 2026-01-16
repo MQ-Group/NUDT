@@ -1,11 +1,11 @@
 task: detect
-mode: adv
+mode: defend
 model: ./cfgs/model.yaml
 data: ./cfgs/data.yaml
-epochs: 100
+epochs: 1
 time: null
 patience: 100
-batch: 1
+batch: 128
 imgsz: 640
 save: true
 save_period: -1
@@ -34,10 +34,10 @@ compile: false
 overlap_mask: true
 mask_ratio: 4
 dropout: 0.0
-val: true
+val: false
 split: val
 save_json: false
-conf: null
+conf: 0.0
 iou: 0.7
 max_det: 300
 half: false
@@ -104,8 +104,8 @@ erasing: 0.4
 cfg: null
 tracker: botsort.yaml
 save_dir: ./output
+defend_method: adversarial_training
 attack_method: jitter
-defend_method: scale
 adversarial_sample_proportion: 50
 epsilon: 0.058823529411764705
 step_size: 0.00784313725490196
